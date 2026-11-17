@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% block title %}{{ t.name }}{% endblock %}{% block content %}
+<h1>{{ t.name }}</h1>
+<p>{{ t.url }}</p>
+<ul>
+<li>Criticality: {{ t.criticality }}</li><li>Data sensitivity: {{ t.data_sensitivity }}</li>
+<li>Internet exposure: {{ t.internet_exposure }}</li><li>Business impact: {{ t.business_impact }}</li>
+</ul>
+<form method="post" action="/targets/{{ t.id }}/scan"><button type="submit">Start scan</button></form>
+{% if scan %}<p>Last scan #{{ scan.id }}: <strong>{{ scan.status }}</strong>
+{% if scan.finished_at %} at {{ scan.finished_at }}{% endif %}
+· <a href="/scans/{{ scan.id }}">details</a></p>{% endif %}
+{% endblock %}

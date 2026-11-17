@@ -1,0 +1,14 @@
+:root { color-scheme: light dark; --fg:#1b1b1b; --bg:#fff; --muted:#666; --line:#ccc; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --fg:#e6e6e6; --bg:#151515; --muted:#999; --line:#444; } }
+body { margin:0; font:14px system-ui, sans-serif; color:var(--fg); background:var(--bg); }
+header { padding:12px 16px; border-bottom:1px solid var(--line); }
+main { padding:16px; max-width:1100px; margin:auto; }
+table { border-collapse:collapse; width:100%; overflow-x:auto; display:block; }
+th, td { border-bottom:1px solid var(--line); padding:6px; text-align:left; vertical-align:top; }
+tr.row { cursor:pointer; }
+td.url { word-break:break-all; }
+label { display:block; margin:8px 0; }
+input, select { display:block; margin-top:4px; padding:4px; min-width:280px; }
+small { color:var(--muted); display:block; }
+.errors { color:#b00020; }
+.btn, button { padding:6px 12px; }

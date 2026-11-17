@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% block title %}New target{% endblock %}{% block content %}
+<h1>New target</h1>
+{% if errors %}<ul class="errors">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+<form method="post" action="/targets">
+<label>Name <input name="name" value="{{ form.get('name','') }}" required></label>
+<label>URL (must be on the allowlist in docs/TARGETS.md) <input name="url" value="{{ form.get('url','') }}" required></label>
+{% for k, text in help.items() %}
+<label>{{ k.replace('_',' ')|capitalize }} <small>{{ text }}</small>
+<select name="{{ k }}">{% for l in levels %}<option{% if form.get(k) == l %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+</label>
+{% endfor %}
+<button type="submit">Save target</button>
+</form>
+{% endblock %}

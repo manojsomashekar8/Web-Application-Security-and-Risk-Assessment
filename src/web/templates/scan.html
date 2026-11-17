@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% block title %}Scan {{ s.id }}{% endblock %}{% block content %}
+<h1>Scan #{{ s.id }}</h1>
+<p>Status: <strong id="status">{{ s.status }}</strong> <span id="err">{{ s.error or '' }}</span></p>
+<p id="done" {% if s.status != 'done' %}hidden{% endif %}><a href="/scans/{{ s.id }}/findings">View ranked findings</a> ·
+<a href="/scans/{{ s.id }}/compare">Compare rankings</a> · <a href="/api/scans/{{ s.id }}/report.json">JSON report</a></p>
+{% endblock %}
+{% block scripts %}<script src="/static/app.js" data-scan="{{ s.id }}"></script>{% endblock %}
