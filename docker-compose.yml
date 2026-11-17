@@ -1,0 +1,66 @@
+services:
+  postgres:
+    image: postgres:16@sha256:dd2bf3ce2dc83a81674cf7f217fcfd8a5009a4b325dda5b843bfee82a06cff6f
+    environment:
+      POSTGRES_DB: wasra
+      POSTGRES_USER: wasra
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wasra -d wasra"]
+      interval: 5s
+      retries: 30
+
+  zap:
+    image: zaproxy/zap-stable:2.16.1@sha256:7840969c7c9fead565bf9734b12f49f6886db90b1d35b1f74d79710bbd081dab
+    command: >
+      zap.sh -daemon -host 0.0.0.0 -port 8090
+      -config api.key=${ZAP_API_KEY}
+      -config api.addrs.addr.name=.*
+      -config api.addrs.addr.regex=true
+    ports: ["127.0.0.1:8090:8090"]
+    shm_size: 512m
+
+  juice-shop:
+    image: bkimminich/juice-shop:v19.0.0@sha256:2765a26de7647609099a338d5b7f61085d95903c8703bb70f03fcc4b12f0818d
+    ports: ["127.0.0.1:3000:3000"]
+
+  dvwa:
+    image: vulnerables/web-dvwa:1.9@sha256:14c929ec1a99edb77326201f7f0fb431d1b3dd099c09ddeaf46312ab0ff53cfe
+  webgoat:
+    image: webgoat/webgoat:v2026.5@sha256:95c23e70502d0e0e11a826a73889e2ca93f965171202c17c0c59353ba67be86a
+  bwapp:
+    image: raesene/bwapp:latest@sha256:2f41183ea9f9e8fb36678d7a2a0c8a9db9a59f4569cee02fe6664b419b2600ee
+
+  backend:
+    build: .
+    depends_on:
+      postgres: {condition: service_healthy}
+      zap: {condition: service_started}
+    environment:
+      DATABASE_URL: postgresql://wasra:${POSTGRES_PASSWORD}@postgres:5432/wasra
+      GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD}
+      ZAP_URL: http://zap:8090
+      ZAP_API_KEY: ${ZAP_API_KEY}
+      WEB_USER: ${WEB_USER}
+      WEB_PASSWORD: ${WEB_PASSWORD}
+    ports: ["127.0.0.1:8080:8000"]
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    volumes: ["./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    ports: ["127.0.0.1:9090:9090"]
+
+  grafana:
+    image: grafana/grafana:12.0.0
+    depends_on: [postgres, prometheus]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD}
+    volumes: ["./grafana/provisioning:/etc/grafana/provisioning:ro"]
+    ports: ["127.0.0.1:3001:3000"]
+
+volumes:
+  pgdata:

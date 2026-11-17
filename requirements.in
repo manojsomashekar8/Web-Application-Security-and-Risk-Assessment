@@ -1,0 +1,11 @@
+requests
+fastapi
+uvicorn
+jinja2
+python-multipart
+psycopg[binary]
+prometheus-client
+httpx
+pytest
+pytest-cov
+playwright==1.65.2
