@@ -23,7 +23,19 @@ class ZapClient:
         while int(self._get(status_path, scanId=scan_id)["status"]) < 100:
             time.sleep(POLL_SECONDS)
 
-    def run(self, target: str) -> None:
+    def set_cookie(self, cookie: str | None) -> None:
+        """Send a fixed Cookie header on every request (session seeded by collectors/auth.py)."""
+        try:  # ZAP answers 400 when no rule with this description exists yet (first run)
+            self._get("/JSON/replacer/action/removeRule/", description="wasra-auth")
+        except requests.HTTPError:
+            pass
+        if cookie:
+            self._get("/JSON/replacer/action/addRule/", description="wasra-auth", enabled="true",
+                      matchType="REQ_HEADER", matchRegex="false", matchString="Cookie", replacement=cookie,
+                      initiators="")
+
+    def run(self, target: str, cookie: str | None = None) -> None:
+        self.set_cookie(cookie)
         self._get("/JSON/core/action/newSession/", name="wasra", overwrite="true")  # clean state per run
         sid = self._get("/JSON/spider/action/scan/", url=target, maxChildren=0, recurse=True)["scan"]
         self._wait("/JSON/spider/view/status/", sid)
