@@ -1,0 +1,39 @@
+{
+  "_comment": "Class-level ground truth per app, from each project's documented vulnerability list. An alert counts as a true positive when its CWE is in one of the app's classes. Limitation: class-level labels, not per-instance labels (see docs/RESULTS.md).",
+  "http://juice-shop:3000": {
+    "SQL injection": [89],
+    "Cross-site scripting": [79],
+    "Broken access control": [284, 639],
+    "Path traversal": [22],
+    "Sensitive data exposure": [200, 319],
+    "Security misconfiguration": [16, 693, 1021]
+  },
+  "http://dvwa:80": {
+    "SQL injection": [89],
+    "Cross-site scripting": [79],
+    "OS command injection": [78],
+    "File inclusion": [98],
+    "CSRF": [352],
+    "Unrestricted file upload": [434],
+    "Broken authentication": [307]
+  },
+  "http://webgoat:8080/WebGoat": {
+    "SQL injection": [89],
+    "Cross-site scripting": [79],
+    "Broken access control": [284, 639],
+    "Path traversal": [22],
+    "XML external entity": [611],
+    "Insecure deserialization": [502],
+    "Cross-site request forgery": [352]
+  },
+  "http://bwapp:80": {
+    "SQL injection": [89],
+    "Cross-site scripting": [79],
+    "OS command injection": [78],
+    "File inclusion": [98],
+    "Path traversal": [22],
+    "CSRF": [352],
+    "XML external entity": [611],
+    "HTTP response splitting": [113]
+  }
+}
