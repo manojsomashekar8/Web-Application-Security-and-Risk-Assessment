@@ -1,0 +1,38 @@
+{
+  "config": {
+    "default_context": {
+      "business_impact": "Medium",
+      "criticality": "Medium",
+      "data_sensitivity": "Medium",
+      "internet_exposure": "Medium"
+    },
+    "weights": {
+      "C": 0.3,
+      "E": 0.3,
+      "S": 0.4
+    }
+  },
+  "experiment": "exp1_detection",
+  "generated": "2026-11-17T17:36:51+00:00",
+  "inputs": {
+    "results/raw/juiceshop_alerts.json": "deab7cf60cd52da6e7e65a82edd0a626d945b1cbdd51b36f75badecf7e0258af"
+  },
+  "output": {
+    "juiceshop": {
+      "alerts": 731,
+      "detected_classes": 2,
+      "known_classes": 6,
+      "missed_classes": [
+        "Broken access control",
+        "Cross-site scripting",
+        "Path traversal",
+        "Sensitive data exposure"
+      ],
+      "precision": 0.1778,
+      "recall": 0.3333,
+      "target": "juiceshop",
+      "true_pos_alerts": 130
+    }
+  },
+  "seed": 42
+}

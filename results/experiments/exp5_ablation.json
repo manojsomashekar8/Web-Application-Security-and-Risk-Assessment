@@ -1,0 +1,43 @@
+{
+  "config": {
+    "default_context": {
+      "business_impact": "Medium",
+      "criticality": "Medium",
+      "data_sensitivity": "Medium",
+      "internet_exposure": "Medium"
+    },
+    "weights": {
+      "C": 0.3,
+      "E": 0.3,
+      "S": 0.4
+    }
+  },
+  "experiment": "exp5_ablation",
+  "generated": "2026-11-17T17:36:51+00:00",
+  "inputs": {
+    "data/feeds/epss.csv": "d8d6ca2ed7bfd1d183e54effc5fa4902e5e06595b3a773b93b2dd0623114172b",
+    "data/feeds/kev.json": "4028ec035856331a717d3305e87e45be37d400fc500da34a5464f05fc2773764",
+    "data/feeds/nvd_subset.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "results/raw/juiceshop_alerts.json": "deab7cf60cd52da6e7e65a82edd0a626d945b1cbdd51b36f75badecf7e0258af"
+  },
+  "output": {
+    "juiceshop": [
+      {
+        "removed": "E",
+        "tau_vs_full": 0.865,
+        "top10_overlap": 0.0
+      },
+      {
+        "removed": "exposure",
+        "tau_vs_full": 1.0,
+        "top10_overlap": 1.0
+      },
+      {
+        "removed": "context",
+        "tau_vs_full": 1.0,
+        "top10_overlap": 1.0
+      }
+    ]
+  },
+  "seed": 42
+}
