@@ -1,0 +1,4 @@
+{
+  "_comment": "Context ratings per target. Values: Low, Medium, High.",
+  "default": {"criticality": "Medium", "data_sensitivity": "Medium", "internet_exposure": "Medium", "business_impact": "Medium"}
+}

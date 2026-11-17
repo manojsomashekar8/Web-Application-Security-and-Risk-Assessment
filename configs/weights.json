@@ -1,0 +1,4 @@
+{
+  "_comment": "Default equal weights for the weighted-sum baseline (0.4 S + 0.3 E + 0.3 C per spec). Change only for sensitivity analysis.",
+  "weighted_sum": {"S": 0.4, "E": 0.3, "C": 0.3}
+}
