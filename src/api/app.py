@@ -1,0 +1,68 @@
+"""FastAPI app: web UI pages, JSON API, Prometheus /metrics."""
+import pathlib
+
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, generate_latest, REGISTRY
+from fastapi.responses import Response
+
+from src import db, service
+from src.api.auth import require_auth
+from src.metrics.exporter import WasraCollector
+from src.report.build import build_report
+from src.web.routes import router as web_router
+
+HERE = pathlib.Path(__file__).resolve().parents[1]
+app = FastAPI(title="WASRA")
+app.include_router(web_router)
+app.mount("/static", StaticFiles(directory=str(HERE / "web" / "static")), name="static")
+REGISTRY.register(WasraCollector())
+
+
+@app.get("/healthz")
+def healthz():
+    return {"ok": True}
+
+
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(REGISTRY), media_type=CONTENT_TYPE_LATEST)
+
+
+@app.get("/api/targets", dependencies=[Depends(require_auth)])
+def list_targets():
+    with db.connect() as conn:
+        return conn.execute("SELECT * FROM targets ORDER BY id").fetchall()
+
+
+@app.post("/api/targets", dependencies=[Depends(require_auth)], status_code=201)
+def create_target(body: dict):
+    ctx = {k: body.get(k, "") for k in service.CONTEXT_FIELDS}
+    errors = service.validate_target(body.get("name", ""), body.get("url", ""), ctx)
+    if errors:
+        raise HTTPException(422, errors)
+    return {"id": service.create_target(body["name"], body["url"], ctx)}
+
+
+@app.post("/api/targets/{tid}/scan", dependencies=[Depends(require_auth)], status_code=202)
+def api_scan(tid: int):
+    return {"scan_id": service.start_scan(tid)}
+
+
+@app.get("/api/scans/{sid}", dependencies=[Depends(require_auth)])
+def scan_status(sid: int):
+    with db.connect() as conn:
+        s = conn.execute("SELECT * FROM scans WHERE id=%s", (sid,)).fetchone()
+    if not s:
+        raise HTTPException(404, "no such scan")
+    return {"id": s["id"], "status": s["status"], "error": s["error"]}
+
+
+@app.get("/api/scans/{sid}/findings", dependencies=[Depends(require_auth)])
+def scan_findings(sid: int):
+    return service.findings_for_scan(sid)
+
+
+@app.get("/api/scans/{sid}/report.json", dependencies=[Depends(require_auth)])
+def scan_report(sid: int):
+    return build_report(sid)
