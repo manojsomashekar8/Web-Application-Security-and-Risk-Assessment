@@ -1,0 +1,4 @@
+{
+  "_comment": "ZAP plugin id -> CVE IDs. Only explicit, reviewed mappings. Empty by default (see DECISIONS D10).",
+  "_example": {"10003": ["CVE-2015-9251"]}
+}

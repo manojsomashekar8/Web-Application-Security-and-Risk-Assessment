@@ -1,0 +1,9 @@
+{
+  "cve_count": 0,
+  "files": {
+    "epss.csv": "d8d6ca2ed7bfd1d183e54effc5fa4902e5e06595b3a773b93b2dd0623114172b",
+    "kev.json": "4028ec035856331a717d3305e87e45be37d400fc500da34a5464f05fc2773764",
+    "nvd_subset.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "snapshot_date": "2026-11-17"
+}

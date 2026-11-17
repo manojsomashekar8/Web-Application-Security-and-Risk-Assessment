@@ -1,0 +1,1 @@
+# CVEs to include in the NVD subset (one per line)
