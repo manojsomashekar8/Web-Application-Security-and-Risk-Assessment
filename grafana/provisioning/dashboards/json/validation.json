@@ -1,0 +1,11 @@
+{
+  "title": "WASRA validation", "uid": "wasra-validation", "schemaVersion": 39, "time": {"from": "now-365d", "to": "now"},
+  "panels": [
+    {"id": 1, "type": "table", "title": "Detection precision and recall per target", "gridPos": {"x": 0, "y": 0, "w": 24, "h": 10},
+     "datasource": {"uid": "wasra-db"}, "targets": [{"refId": "A", "format": "table", "rawQuery": true, "editorMode": "code",
+     "rawSql": "SELECT target, known_vulns, detected, true_pos, round(precision::numeric, 3) AS precision, round(recall::numeric, 3) AS recall, run_date FROM validation_results ORDER BY run_date DESC, target"}]},
+    {"id": 2, "type": "barchart", "title": "Recall by target", "gridPos": {"x": 0, "y": 10, "w": 24, "h": 8},
+     "datasource": {"uid": "wasra-db"}, "targets": [{"refId": "A", "format": "table", "rawQuery": true, "editorMode": "code",
+     "rawSql": "SELECT target, recall FROM validation_results WHERE run_date = (SELECT max(run_date) FROM validation_results)"}]}
+  ]
+}

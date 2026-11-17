@@ -1,0 +1,37 @@
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: wasra
+    folder: WASRA
+    interval: 1m
+    rules:
+      - uid: kev-finding
+        title: KEV-listed finding on a monitored target
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: wasra-db
+            model:
+              refId: A
+              rawSql: "SELECT count(*) AS kev_count FROM findings WHERE kev"
+              format: table
+              rawQuery: true
+              editorMode: code
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: {params: [0], type: gt}
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        annotations:
+          summary: At least one finding is listed in CISA KEV on a scanned target.
+        labels: {severity: high}

@@ -1,0 +1,12 @@
+{
+  "title": "WASRA ranking stability", "uid": "wasra-ranking", "schemaVersion": 39, "time": {"from": "now-30d", "to": "now"},
+  "templating": {"list": [{"name": "scan", "type": "query", "datasource": {"uid": "wasra-db"}, "query": "SELECT id AS __value, id AS __text FROM scans WHERE status='done' ORDER BY id DESC", "refresh": 1}]},
+  "panels": [
+    {"id": 1, "type": "table", "title": "Top 10 by framework risk (selected scan)", "gridPos": {"x": 0, "y": 0, "w": 24, "h": 10},
+     "datasource": {"uid": "wasra-db"}, "targets": [{"refId": "A", "format": "table", "rawQuery": true, "editorMode": "code",
+     "rawSql": "SELECT rank_risk, rank_cvss_only, rank_zap_risk_only, rank_weighted_sum, type, url, round(risk::numeric, 1) AS risk FROM findings WHERE scan_id = $scan AND rank_risk <= 10 ORDER BY rank_risk"}]},
+    {"id": 2, "type": "timeseries", "title": "Framework risk of top findings across scans", "gridPos": {"x": 0, "y": 10, "w": 24, "h": 10},
+     "datasource": {"uid": "wasra-db"}, "targets": [{"refId": "A", "format": "time_series", "rawQuery": true, "editorMode": "code",
+     "rawSql": "SELECT s.finished_at AS time, f.type AS metric, f.risk AS value FROM findings f JOIN scans s ON s.id = f.scan_id WHERE f.rank_risk <= 10 AND s.status = 'done' ORDER BY 1"}]}
+  ]
+}

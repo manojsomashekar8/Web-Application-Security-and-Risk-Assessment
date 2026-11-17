@@ -1,0 +1,14 @@
+{
+  "title": "WASRA overview", "uid": "wasra-overview", "schemaVersion": 39, "time": {"from": "now-7d", "to": "now"},
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Scans by status", "gridPos": {"x": 0, "y": 0, "w": 8, "h": 6},
+     "datasource": {"uid": "prom"}, "targets": [{"refId": "A", "expr": "wasra_scans", "legendFormat": "{{status}}"}]},
+    {"id": 2, "type": "piechart", "title": "Findings by ZAP risk", "gridPos": {"x": 8, "y": 0, "w": 8, "h": 6},
+     "datasource": {"uid": "prom"}, "targets": [{"refId": "A", "expr": "wasra_findings", "legendFormat": "{{zap_risk}}"}]},
+    {"id": 3, "type": "bargauge", "title": "Average framework risk per target", "gridPos": {"x": 16, "y": 0, "w": 8, "h": 6},
+     "datasource": {"uid": "prom"}, "targets": [{"refId": "A", "expr": "wasra_avg_risk", "legendFormat": "{{target}}"}]},
+    {"id": 4, "type": "table", "title": "Scans over time", "gridPos": {"x": 0, "y": 6, "w": 24, "h": 8},
+     "datasource": {"uid": "wasra-db"}, "targets": [{"refId": "A", "format": "table", "rawQuery": true, "editorMode": "code",
+     "rawSql": "SELECT s.id, t.url, s.status, s.started_at, s.finished_at, s.finished_at - s.started_at AS duration FROM scans s JOIN targets t ON t.id = s.target_id ORDER BY s.id DESC LIMIT 100"}]}
+  ]
+}
