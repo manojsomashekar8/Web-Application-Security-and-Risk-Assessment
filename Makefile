@@ -37,7 +37,7 @@ scan-validation:  ## raw ZAP scans of DVWA, WebGoat, bWAPP (inside the backend c
 	docker compose exec -T backend python -m src.collectors.run_scan --target http://bwapp:80 --name bwapp
 
 experiments:  ## validation experiments 1-5 from saved raw alerts (offline)
-	$(PY) -m src.experiments.run --store
+	DATABASE_URL="$(DBURL)" $(PY) -m src.experiments.run --store
 
 report:  ## write JSON and HTML reports for finished scans to results/reports/
 	DATABASE_URL="$(DBURL)" $(PY) -m src.report.build
