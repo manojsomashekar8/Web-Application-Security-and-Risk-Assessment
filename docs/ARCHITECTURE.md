@@ -1,68 +1,69 @@
-# Architecture
+# How the system fits together
 
-## Components
+This page explains the parts of the system and how they talk to each other. You do not need to read the code to follow it.
 
-| Component | Where | What it does |
+## The parts
+
+| Part | Where it lives | What it does |
 |---|---|---|
-| Web UI (FastAPI + Jinja2) | `src/web/`, served by `backend` on 127.0.0.1:8080 | Target registration, scan start and status, ranked findings, baseline comparison, report links. Talks only to `src/service.py` |
-| JSON API | `src/api/app.py` | Same operations as the UI, for scripts and the host CLI (`src/cli.py`) |
-| Services | `src/service.py` | Allowlist check, target and scan records, background scan job, one-at-a-time ZAP lock |
-| ZAP client | `src/collectors/zap_client.py` | New session, spider, AJAX spider, passive wait, active scan, alert paging. Sends a session cookie when a target needs login |
-| Session seeding | `src/collectors/auth.py` | Logs in to DVWA, bWAPP and WebGoat from inside the Compose network |
-| Normalization | `src/normalize/` | ZAP alert JSON to the internal Finding schema (CWE and OWASP mapping) |
-| Enrichment | `src/enrich/` | CVSS, EPSS and KEV from the local feed snapshot, only where a CVE is mapped |
-| Scoring | `src/scoring/` | Framework risk, three baselines, explanation text, rank comparison |
-| Pipeline | `src/pipeline.py` | normalize, enrich, score, rank. The same code path for the UI, the CLI and the experiments |
-| Storage | `db/migrations/`, `src/db.py` | PostgreSQL: targets, scans, findings, validation results. Read-only role for Grafana |
-| Metrics | `src/metrics/exporter.py` | Prometheus collector that reads current state from PostgreSQL on every scrape |
-| Grafana | `grafana/provisioning/`, 127.0.0.1:3001 | Dashboards and one alert rule, provisioned from files. Reads Prometheus and the read-only DB role |
-| Experiments | `src/experiments/run.py` | Validation experiments 1–5, offline, from saved raw alerts |
+| **Web app** | `src/web/` | The pages you click through: list targets, add a target, start a scan, see ranked findings |
+| **Web API** | `src/api/app.py` | The same actions as the web app, for scripts |
+| **Command line** | `src/cli.py` | The same actions from the terminal |
+| **Services** | `src/service.py` | The rules: check the target is allowed, store records, run one scan at a time |
+| **Scanner client** | `src/collectors/zap_client.py` | Tells the OWASP ZAP scanner what to do and collects the results |
+| **Logins for practice sites** | `src/collectors/auth.py` | Logs in to the practice websites so the scanner can see the pages behind the login |
+| **Clean-up** | `src/normalize/` | Turns the scanner's raw output into one common format |
+| **Adding facts** | `src/enrich/` | Adds severity and exploit data from saved copies of public lists |
+| **Scoring** | `src/scoring/` | Computes the risk score and the comparison scores (see [Scoring](SCORING.md)) |
+| **Pipeline** | `src/pipeline.py` | Runs clean-up, adding facts, scoring and ranking in order. The web app, command line and experiments all use this |
+| **Database** | `db/`, `src/db.py` | PostgreSQL stores targets, scans and findings |
+| **Metrics** | `src/metrics/exporter.py` | Publishes numbers that Prometheus can read |
+| **Dashboards** | `grafana/`, port 3001 | Charts and alerts, built from the metrics and the database |
+| **Experiments** | `src/experiments/run.py` | Five experiments that compare the scoring methods, run from saved scan results |
 
-## Two entry points, one-way data flow
+## How data flows
 
 ```mermaid
 flowchart LR
-    user([Analyst]) -->|HTTP Basic, 127.0.0.1:8080| web[Web UI and JSON API<br/>FastAPI backend]
-    web --> svc[Services and pipeline]
-    svc -->|REST API| zap[(ZAP)]
-    zap -->|HTTP| targets[[Juice Shop, DVWA,<br/>WebGoat, bWAPP]]
-    svc --> pg[(PostgreSQL)]
-    web -->|/metrics| prom[(Prometheus)]
-    prom --> graf[Grafana<br/>127.0.0.1:3001]
-    pg -->|read-only role grafana_ro| graf
-    graf -. no writes .-x pg
+    you([You]) -->|web app, port 8080| web[Web app and API]
+    web --> svc[Rules and pipeline]
+    svc -->|asks to scan| zap[(ZAP scanner)]
+    zap -->|visits| targets[[Practice websites]]
+    svc --> db[(Database)]
+    web -->|metrics| prom[(Prometheus)]
+    prom --> graf[Dashboards, port 3001]
+    db -->|read-only| graf
 ```
 
-- The analyst uses the web UI. It is the only place where targets are created and scans are started.
-- Grafana is for monitoring and analysis. It reads Prometheus metrics and the findings tables through a read-only role. It cannot write to the database or start scans.
-- Neither entry point talks to ZAP directly. Only the backend does.
-- Data flows one way from the backend into each view: scans and findings go into PostgreSQL, the backend exposes metrics, and both views read from there.
+In plain words:
+- You use the web app to add a target and start a scan. Only the web app can start scans.
+- The web app asks the scanner to visit the website, then saves the results in the database.
+- Dashboards only read data. They cannot change anything or start scans.
+- The scanner is only ever contacted by the web app, never directly by you or the dashboards.
 
-## Scan sequence
+## What happens during one scan
 
 ```mermaid
 sequenceDiagram
-    participant U as Analyst
-    participant B as Backend
-    participant Z as ZAP
-    participant T as Target
-    U->>B: POST /targets/{id}/scan
-    B->>B: check lock, start background job
-    B->>T: login (DVWA, bWAPP, WebGoat only)
-    B->>Z: set Cookie rule, new session
-    B->>Z: spider, AJAX spider
-    Z->>T: crawl
-    B->>Z: passive wait, active scan
-    Z->>T: attack
-    B->>Z: read alerts (paged)
-    B->>B: normalize, enrich, score, rank
-    B->>B: store findings in PostgreSQL
-    U->>B: GET /scans/{id} (polling)
-    B-->>U: status done, link to ranked findings
+    participant You
+    participant App as Web app
+    participant ZAP as Scanner
+    participant Site as Practice website
+    You->>App: Start scan
+    App->>App: Check the site is on the allowed list
+    App->>Site: Log in (for sites that need it)
+    App->>ZAP: Start a fresh session
+    ZAP->>Site: Visit every link it can find
+    ZAP->>Site: Run the attack checks
+    App->>ZAP: Collect the warnings
+    App->>App: Clean up, add facts, score, rank
+    App->>App: Save the findings
+    You->>App: Open the ranked list
 ```
 
-## Trust boundaries
+## Safety rules
 
-- Scan targets must be in `docs/TARGETS.md`. The check runs on the server, not in the browser.
-- Every published port binds to 127.0.0.1. The backend's `/metrics` and `/healthz` have no login. They are reachable only from the host and the Compose network.
-- Credentials live in `.env` (not committed). The seeded logins use the public default accounts of the training apps, only inside the Compose network.
+- A scan only runs against sites listed in [TARGETS.md](TARGETS.md). The server checks this, not the browser.
+- All services only accept connections from your own computer.
+- Login details live in `.env`, which is not stored in git.
+- The practice-site logins are the public default accounts of those apps, and they are only used inside the Docker network.
