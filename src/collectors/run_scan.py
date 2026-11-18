@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import pathlib
+import re
 
 from src.collectors import auth
 from src.collectors.zap_client import ZapClient
@@ -21,7 +22,9 @@ def main() -> None:
     args = ap.parse_args()
     zap = ZapClient(os.environ["ZAP_API_KEY"], os.environ.get("ZAP_URL", "http://zap:8090"))
     zap.run(args.target, cookie=auth.cookie_for(args.target))
-    alerts = zap.alerts(args.target)
+    # ZAP stores URLs without default ports (http://dvwa:80 -> http://dvwa); query alerts with that base.
+    base = re.sub(r"^(https?://[^/:]+):(80|443)(?=/|$)", r"\1", args.target)
+    alerts = zap.alerts(base)
     out = ROOT / "results" / "raw" / f"{args.name}_alerts.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(alerts, indent=2, sort_keys=True))
