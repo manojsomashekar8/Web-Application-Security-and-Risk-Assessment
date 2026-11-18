@@ -1,24 +1,27 @@
 # Decisions
 
-| # | Decision | Alternatives considered | Reason |
-|---|----------|-------------------------|--------|
-| D1 | Image pins: zaproxy/zap-stable:2.16.1, bkimminich/juice-shop:v19.0.0, postgres:16, prom/prometheus:v3.5.0, grafana/grafana:12.0.0 (tags verified with `docker manifest inspect`) | `latest` tags | Reproducibility; digests recorded in REPRODUCIBILITY.md |
-| D2 | `prometheus` is not an image name; use `prom/prometheus` | - | Official image is under prom/ on Docker Hub |
-| D3 | WebGoat: `webgoat/webgoat:v2026.5` (versioned tag, verified via Docker Hub tag list and manifest inspect). First attempts failed only because the `v` prefix was missing | `latest` (moves, breaks reproducibility); digest pinning is the fallback only if no versioned tag exists | Versioned tag preferred per user direction |
-| D4 | DVWA: `vulnerables/web-dvwa`, bWAPP: `raesene/bwapp`, pinned by digest | - | Both resolve; used as unseen validation targets |
-| D5 | Web UI: FastAPI + Jinja2 + vanilla JS (per addendum) | React/Node build | Fewer build steps, reproducible |
-| D6 | PDF report: NOT implemented in phase 4. HTML + JSON only | WeasyPrint 70.0 (available on PyPI) | WeasyPrint needs system Pango/Cairo libs; adds host dependency. Revisit if required |
-| D7 | Playwright pinned to 1.65.2 (PyPI) | - | Addendum requires pinned Playwright |
-| D8 | Commit messages carry no AI attribution (user instruction overrides the default Co-Authored-By reminder) | Add Co-Authored-By line | User rule in prompt section 2 takes precedence |
-| D9 | Host: Ubuntu 24.04.3, kernel 6.17, 12 CPU, 23 GiB RAM, Docker 29.1.3, Compose v5.0.0, Python 3.12.3 | - | Recorded from `make` target |
-| D10 | ZAP web-app alerts carry no CVE IDs. CVSS/EPSS/KEV apply only where a CVE is mapped explicitly (configs/cve_map.json). All other findings use the ZAP-risk / ZAP-confidence / CWE fallbacks from SCORING.md | Pull CVEs from NVD by keyword for every finding | Keyword matching produces false CVE links; explicit mapping is auditable. Limitation must be reported in RESULTS.md |
-| D11 | Feed snapshot: EPSS + KEV full files, NVD subset = CVEs listed in configs/cve_list.txt, fetched by ID. Manifest holds date and SHA-256 | Full NVD dump (large, slow) | Keeps the snapshot small and reproducible |
-| D12 | Scoring config is JSON (configs/weights.json, configs/context_presets.json), not YAML | YAML | No extra dependency |
-| D13 | Web UI login: HTTP Basic auth with WEB_USER / WEB_PASSWORD from .env, compared with hmac.compare_digest | Session login form | Simpler, same protection on loopback; the addendum's "simple login" is met |
-| D14 | Scan allowlist is parsed from docs/TARGETS.md (`- <url> | note` lines). Server rejects any URL not listed | Separate allowlist file | Single source the user reviews |
-| D15 | ZAP active scan uses default policy. Juice Shop active scan is slow (DomXss plugin ~345 s per host, full scan takes hours). Kept as is for fidelity; time is recorded in RESULTS.md | Reduced policy | Keeps scanner results comparable to the papers' setup |
-| D16 | Read-only Grafana role is created by migration with a placeholder password; `make up` sets the real password from .env with ALTER ROLE | Put password in SQL file | Secrets stay out of committed files |
-| D17 | Scan = new ZAP session, traditional spider, then AJAX spider (htmlunit, 10 min cap), then passive wait, then active scan. Reason: first Juice Shop run found 95 URLs and zero /rest/ or /api/ endpoints, so the active scan never tested the API (no SQLi or XSS found) | Traditional spider only; OpenAPI import (Juice Shop serves no OpenAPI document at /api-docs/swagger.json, verified) | AJAX spider is a built-in ZAP add-on present in the image; no per-target config |
-| D18 | DVWA pinned to `vulnerables/web-dvwa:1.9` (versioned tag, found on Docker Hub) with digest | `latest` | Versioned tag preferred |
-| D19 | bWAPP has only `latest` on Docker Hub. Pinned by digest (fallback): `raesene/bwapp:latest@sha256:2f41…600ee`, pulled 2026-11-17, no versioned tag exists | Other bWAPP images | Digest pin is the documented fallback per user direction |
-| D20 | All compose images use `repo:tag@sha256:digest` form. Digests read from local pulls 2026-11-17 | tag-only | Digest makes the pin exact |
+This page lists the main choices we made and why. Each row says what we picked, what else we could have picked, and the reason.
+
+| # | What we picked | Other options | Why |
+|---|---|---|---|
+| D1 | Specific version tags for the main tools (ZAP 2.16.1, Juice Shop v19.0.0, Postgres 16, Prometheus v3.5.0, Grafana 12.0.0) | The `latest` tag | The same setup gives the same results later |
+| D2 | `prom/prometheus` as the image name | `prometheus` | That is the official image's name on Docker Hub |
+| D3 | WebGoat `v2026.5` | `latest` | `latest` changes over time, which would break reproducibility |
+| D4 | DVWA and bWAPP pinned by digest (a fingerprint of the exact image) | Any other copy of these apps | Both are well-known practice apps |
+| D5 | Web app built with FastAPI, Jinja2 and plain JavaScript | A React app with a build step | Fewer moving parts to install and maintain |
+| D6 | HTML and JSON reports only, no PDF | PDF with WeasyPrint | WeasyPrint needs extra system libraries. We can add PDF later if needed |
+| D7 | Playwright pinned to 1.65.2 | Unpinned | Keeps the browser tests repeatable |
+| D8 | Commit messages contain no AI attribution lines | Adding an attribution line | The project owner asked for plain commit messages |
+| D9 | Recorded the machine details: Ubuntu 24.04.3, 12 CPUs, 23 GB RAM, Docker 29.1.3, Python 3.12.3 | Not recording them | Results can depend on the machine, so we note it |
+| D10 | CVE severity and exploit data are only used where a CVE is matched explicitly, using `configs/cve_map.json` | Searching public databases by keyword for every finding | Keyword searches give false matches. An explicit list is easy to check |
+| D11 | Saved copies of the public lists (EPSS, KEV, and a subset of NVD), with a checksum for each | The full NVD database | The full database is large and slow to download |
+| D12 | Settings files in JSON | YAML | No extra library needed |
+| D13 | Web app login with a username and password from `.env` | A full login page with sessions | Simpler, and still protected because the app only listens on your own computer |
+| D14 | The list of allowed targets is read from `docs/TARGETS.md` | A separate allowlist file | One file for the owner to review |
+| D15 | ZAP's default scan settings | A reduced scan | Keeps the results comparable to the research this project follows. The Juice Shop scan is slow with these settings, and we have not yet recorded how long it takes |
+| D16 | The Grafana read-only database account is set up from `.env` when the stack starts | Putting the password in the SQL file | Keeps secrets out of committed files |
+| D17 | Scan order: fresh session, normal spider, AJAX spider, passive checks, then active scan | Normal spider only | The first Juice Shop run found no API endpoints, because the normal spider can't see pages that load with JavaScript |
+| D18 | DVWA pinned to `vulnerables/web-dvwa:1.9` with its digest | `latest` | Versioned tag preferred |
+| D19 | bWAPP pinned by digest only | Other bWAPP images | bWAPP has no versioned tag on Docker Hub, so the digest is the only stable pin |
+| D20 | Every Docker image is pinned as tag plus digest | Tag only | The digest makes the pin exact |
+| D21 | Scanner URLs are stored without the default port (`http://dvwa`, not `http://dvwa:80`). The alert lookup now strips the port too | Looking up alerts with the port | Found during validation: the lookup with the port returned almost nothing. Fixed in `src/collectors/run_scan.py` |
