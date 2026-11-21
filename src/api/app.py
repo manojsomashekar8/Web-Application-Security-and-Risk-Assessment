@@ -44,6 +44,12 @@ def create_target(body: dict):
     return {"id": service.create_target(body["name"], body["url"], ctx)}
 
 
+@app.get("/api/targets/{tid}/latest-scan", dependencies=[Depends(require_auth)])
+def latest_scan(tid: int):
+    s = service.latest_scan(tid)
+    return {"id": s["id"], "status": s["status"], "error": s["error"]} if s else None
+
+
 @app.post("/api/targets/{tid}/scan", dependencies=[Depends(require_auth)], status_code=202)
 def api_scan(tid: int):
     return {"scan_id": service.start_scan(tid)}

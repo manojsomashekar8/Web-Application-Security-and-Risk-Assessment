@@ -72,14 +72,16 @@ def _run_scan(scan_id: int, target_id: int) -> None:
             conn.execute(
                 "INSERT INTO findings (scan_id, plugin_id, type, cwe, owasp, url, zap_risk, zap_confidence, "
                 "cve, cvss, epss, kev, risk, weighted_sum, cvss_only, zap_risk_only, rank_risk, "
-                "rank_weighted_sum, rank_cvss_only, rank_zap_risk_only, explanation, factors) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                "rank_weighted_sum, rank_cvss_only, rank_zap_risk_only, explanation, factors, "
+                "classification, occurrences, fingerprint) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (scan_id, r["id"], r["type"], r["cwe"], r["owasp"], r["url"], r["zap_risk"], r["zap_confidence"],
                  r["cve"], r["cvss"], r["epss"], r["kev"], r["risk"], r["weighted_sum"], r["cvss_only"],
                  r["zap_risk_only"], r["rank_risk"], r["rank_weighted_sum"], r["rank_cvss_only"],
                  r["rank_zap_risk_only"], r["explanation"], json.dumps({"S": r["S"], "E": r["E"],
                                                                          "exposure": r["exposure"],
-                                                                         "I": r["I"], "L": r["L"], **ctx})),
+                                                                         "I": r["I"], "L": r["L"], **ctx}),
+                 r["classification"], r["occurrences"], r["fingerprint"]),
             )
         conn.execute("UPDATE scans SET status='done', finished_at=now() WHERE id=%s", (scan_id,))
     except Exception as exc:  # record failure, never leave the scan 'running'
