@@ -30,3 +30,17 @@ class WasraCollector(Collector):
             ):
                 kev.add_metric([r["url"]], r["n"])
             yield kev
+            cls = GaugeMetricFamily("wasra_findings_by_class", "Unique findings by classification",
+                                    labels=["classification"])
+            for r in conn.execute("SELECT classification, count(*) AS n FROM findings GROUP BY classification"):
+                cls.add_metric([r["classification"]], r["n"])
+            yield cls
+            raw = GaugeMetricFamily("wasra_alerts", "Raw alerts vs unique findings per target",
+                                    labels=["target", "kind"])
+            for r in conn.execute(
+                "SELECT t.url, sum(f.occurrences) AS raw, count(*) AS uniq FROM findings f "
+                "JOIN scans s ON s.id=f.scan_id JOIN targets t ON t.id=s.target_id GROUP BY t.url"
+            ):
+                raw.add_metric([r["url"], "raw"], r["raw"])
+                raw.add_metric([r["url"], "unique"], r["uniq"])
+            yield raw
