@@ -1,17 +1,31 @@
-// Thin wrapper over the JSON API. The browser sends the Basic-auth login it already holds.
+// JSON API helper. In basic mode the user logs in once; the credentials are kept in memory only
+// (never in localStorage) and sent as an Authorization header on every request.
+let authHeader = null;
+
+export function setCredentials(user, pass) {
+  authHeader = "Basic " + btoa(`${user}:${pass}`);
+}
+
+export function clearCredentials() {
+  authHeader = null;
+}
+
 export async function api(path, options = {}) {
-  const res = await fetch(`/api${path}`, {
-    credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
-  if (res.status === 401) throw new Error("Login required: reload the page and enter your WASRA username and password.");
+  const headers = { "Content-Type": "application/json", ...(authHeader ? { Authorization: authHeader } : {}) };
+  const res = await fetch(`/api${path}`, { credentials: "same-origin", ...options, headers: { ...headers, ...(options.headers || {}) } });
+  if (res.status === 401) throw new Error("Wrong username or password, or login required.");
   if (!res.ok) {
     let detail = res.statusText;
     try { detail = JSON.stringify((await res.json()).detail); } catch { /* keep statusText */ }
     throw new Error(`${res.status}: ${detail}`);
   }
   return res.status === 204 ? null : res.json();
+}
+
+export async function loadConfig() {
+  const res = await fetch("/api/config");
+  if (!res.ok) throw new Error(`Cannot read server config (${res.status})`);
+  return res.json();
 }
 
 export const LEVELS = ["Low", "Medium", "High"];
