@@ -1,14 +1,14 @@
 # How to start the project
 
-This guide is for someone who has never run the project before. Follow the steps in order.
+This guide is for someone who has never run the project before. Follow the steps in order. For the full explanation of how everything works, read [EXPLAIN.md](../EXPLAIN.md).
 
 ## What you need
 
-- **Docker** and **Docker Compose** installed
-- **Python 3.12**
-- **About 25 GB of free disk space**. The scanner images are large.
-- **At least 16 GB of RAM**. The scanner uses about 10 GB while it runs.
-- **Only one scan at a time.** Running two at once will slow your computer a lot.
+- **Docker** and **Docker Compose**
+- **Python 3.12** and **Node.js 20** (only if you want to change the frontend outside Docker)
+- **About 25 GB of free disk space.** The scanner images are large.
+- **At least 16 GB of RAM.** The scanner uses about 10 GB while it runs.
+- **One scan at a time.** Running two at once slows your computer a lot.
 
 ## Step 1: Create your settings file (first time only)
 
@@ -16,7 +16,7 @@ This guide is for someone who has never run the project before. Follow the steps
 make env
 ```
 
-This creates a file called `.env` with random passwords. Never share this file or commit it to git.
+This creates `.env` with random passwords. Never share it or commit it to git.
 
 ## Step 2: Start everything
 
@@ -24,17 +24,20 @@ This creates a file called `.env` with random passwords. Never share this file o
 make up
 ```
 
-This starts nine services in Docker: the scanner, the database, the web app, the dashboards, the monitoring, and the three practice websites. The first start takes several minutes because Docker downloads the images.
+This starts the services in Docker. Database changes (migrations) are applied automatically when the backend starts. The first start takes several minutes because Docker downloads and builds the images.
 
-When it finishes, these addresses work from your own computer:
+After it finishes, these addresses work from your own computer:
 
 | What | Address | Login |
 |---|---|---|
-| Web app | http://127.0.0.1:8080 | Username and password from `.env` (`WEB_USER`, `WEB_PASSWORD`) |
-| Dashboards (Grafana) | http://127.0.0.1:3001 | Username `admin`, password from `.env` (`GRAFANA_ADMIN_PASSWORD`) |
-| Scanner (ZAP) | http://127.0.0.1:8090 | Uses an API key from `.env` |
+| **React web app (use this one)** | http://127.0.0.1:8081 | `WEB_USER` and `WEB_PASSWORD` from `.env` |
+| Original web pages | http://127.0.0.1:8080 | Same as above |
+| Dashboards (Grafana) | http://127.0.0.1:3001 | `admin` and `GRAFANA_ADMIN_PASSWORD` from `.env` |
+| Scanner (ZAP) | http://127.0.0.1:8090 | API key in `.env` |
 
-**Note:** `zap` and `webgoat` may show "unhealthy" in `docker compose ps`. That status comes from their health checks, not from the services. Both still answer requests.
+**Note:** `zap` and `webgoat` may show "unhealthy" in `docker compose ps`. That comes from their health checks. Both still answer requests.
+
+**After a reboot** Docker stops the containers. Run `make up` again.
 
 ## Step 3: Check that it works
 
@@ -42,24 +45,28 @@ When it finishes, these addresses work from your own computer:
 make test
 ```
 
-This runs the automatic checks. You should see something like `36 passed`. The browser tests are skipped unless you run them with the browser setting:
+You should see `44 passed` or similar. The browser tests are skipped unless you turn them on:
 
 ```
-WASRA_E2E=1 .venv/bin/python -m pytest tests/e2e/test_ui_smoke.py tests/e2e/test_grafana_smoke.py
+WASRA_E2E=1 .venv/bin/python -m pytest tests/e2e
 ```
 
 ## Step 4: Scan something
 
-The web app only scans the sites listed in [TARGETS.md](TARGETS.md).
+Only the websites listed in [TARGETS.md](TARGETS.md) can be scanned.
 
-1. Open http://127.0.0.1:8080 and log in.
-2. Click the target you want to scan, for example DVWA.
-3. Click **Start scan**, then wait. A scan can take a long time, especially the active scan.
-4. When it says `done`, open the ranked findings.
+1. Open http://127.0.0.1:8081 and log in.
+2. Click **Add target** if the site is not listed yet. Pick a website and rate the business context (criticality, data sensitivity, exposure, impact).
+3. Open the target and click **Start scan**. The page updates by itself. A scan can take a long time.
+4. When it says `done`, you see the ranked findings. Click a row to read why it got its score.
 
-To scan from the terminal instead, use `make scan-validation` (scans DVWA, WebGoat and bWAPP one after another).
+To scan the three practice sites from the terminal instead:
 
-## Step 5: Build the results tables
+```
+make scan-validation
+```
+
+## Step 5: Rebuild the results tables
 
 ```
 make experiments
@@ -67,19 +74,37 @@ make experiments
 
 This reads the saved scan results and writes the experiment tables to `results/experiments/`.
 
+## Changing the frontend
+
+After editing files in `frontend/`:
+
+```
+docker compose build frontend
+docker compose up -d frontend
+```
+
+To check the frontend builds without Docker:
+
+```
+cd frontend
+npm install
+npm run build
+```
+
 ## Stopping and restarting
 
 | Goal | Command |
 |---|---|
 | Stop everything (keeps your data) | `make down` |
-| Start again later | `make up` |
+| Start again | `make up` |
 | Delete containers and volumes (wipes the database) | `make clean` |
 
-`make clean` deletes stored scan results in the database. Raw scan files in `results/raw/` are kept.
+`make clean` deletes stored scan results in the database. Raw files in `results/raw/` are kept.
 
 ## When something goes wrong
 
-- **Out of disk space.** Check with `df -h /`. Unused Docker images can be removed with `docker image prune`, but only remove images you do not need.
-- **The computer freezes during a scan.** Stop the scanner with `docker compose stop zap`, then free memory by closing other programs.
-- **A service will not start.** Run `docker compose logs <service-name>` to see the error. For example, `docker compose logs postgres`.
-- **Port already in use.** Another program is using the same port. Find it with `ss -ltnp | grep <port>` and stop it.
+- **Out of disk space.** Check with `df -h /`. Remove only images you do not need.
+- **The computer freezes during a scan.** Stop the scanner with `docker compose stop zap` and close other programs.
+- **A service will not start.** Read its log: `docker compose logs <service>`, for example `docker compose logs backend`.
+- **Port already in use.** Find what is using it with `ss -ltnp | grep <port>`.
+- **The web page asks for a login again and again.** Check the username and password in `.env` match what you type.
