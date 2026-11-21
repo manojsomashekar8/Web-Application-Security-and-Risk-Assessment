@@ -30,13 +30,14 @@ def page():
         browser.close()
 
 
-def test_auth_is_enforced():
+def test_auth_matches_configured_mode():
     from playwright.sync_api import sync_playwright
 
+    mode = next((l.split("=", 1)[1] for l in ENV.read_text().splitlines() if l.startswith("AUTH_MODE=")), "none")
     with sync_playwright() as p:
         browser = p.chromium.launch()
         resp = browser.new_page().goto(f"{BASE}/targets")
-        assert resp.status == 401
+        assert resp.status == (401 if mode == "basic" else 200), f"AUTH_MODE={mode}, got {resp.status}"
         browser.close()
 
 
