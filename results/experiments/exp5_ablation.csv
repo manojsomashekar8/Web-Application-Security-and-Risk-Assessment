@@ -1,0 +1,13 @@
+target,removed,tau_vs_full,top10_overlap
+juiceshop,E,0.9711,0.8
+juiceshop,exposure,1.0,1.0
+juiceshop,context,1.0,1.0
+dvwa,E,0.7401,0.1
+dvwa,exposure,1.0,1.0
+dvwa,context,1.0,1.0
+webgoat,E,1.0,1.0
+webgoat,exposure,1.0,1.0
+webgoat,context,1.0,1.0
+bwapp,E,0.566,0.0
+bwapp,exposure,1.0,1.0
+bwapp,context,1.0,1.0

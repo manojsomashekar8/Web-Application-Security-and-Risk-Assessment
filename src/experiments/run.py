@@ -4,6 +4,7 @@
   python -m src.experiments.run --store    # also writes detection rows to PostgreSQL (needs DATABASE_URL)
 """
 import argparse
+import csv
 import datetime as dt
 import hashlib
 import json
@@ -14,6 +15,7 @@ from src.enrich.enrich import load_feeds
 from src.normalize.normalize import normalize_all
 from src.pipeline import run as run_pipeline
 from src.scoring.compare import kendall_tau, top_k_overlap
+from src.triage import group
 from src.scoring.score import LEVEL, load_weights, risk, weighted_sum, severity, exploitability, context_values
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -131,12 +133,58 @@ def exp_ablation(alerts, feeds) -> list[dict]:
     return out
 
 
+def exp_dedup(alerts: list[dict]) -> dict:
+    """Raw alerts vs unique findings. Distinct parameters must stay distinct (review: deduplication test)."""
+    groups = group(alerts)
+    counts = sorted((len(g) for g in groups.values()), reverse=True)
+    params = {(k[1], k[2]) for k in groups}
+    return {"raw_alerts": len(alerts), "unique_findings": len(groups),
+            "reduction_pct": round(100 * (1 - len(groups) / len(alerts)), 1) if alerts else 0.0,
+            "largest_group": counts[0] if counts else 0,
+            "groups_with_repeats": sum(1 for c in counts if c > 1),
+            "distinct_path_param_pairs": len(params)}
+
+
+def _flat(d: dict) -> dict:
+    out = {}
+    for k, v in d.items():
+        out[k] = json.dumps(v, sort_keys=True) if isinstance(v, (dict, list)) else v
+    return out
+
+
+def to_csv_rows(payload) -> list[dict]:
+    """One CSV row per (target, item). Nested dicts become JSON strings so every table is flat."""
+    rows = []
+    if isinstance(payload, list):
+        return [_flat(x) for x in payload]
+    for target, value in payload.items():
+        if isinstance(value, list):
+            rows += [{"target": target, **_flat(x)} for x in value]
+        elif isinstance(value, dict) and value and all(isinstance(x, dict) for x in value.values()):
+            rows += [{"target": target, "item": k, **_flat(x)} for k, x in value.items()]
+        else:
+            rows.append({"target": target, **_flat(value if isinstance(value, dict) else {"value": value})})
+    return rows
+
+
+def write_csv(name: str, payload) -> pathlib.Path:
+    rows = to_csv_rows(payload)
+    cols = list(dict.fromkeys(k for r in rows for k in r))
+    path = OUT / f"{name}.csv"
+    with open(path, "w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=cols)
+        w.writeheader()
+        w.writerows(rows)
+    return path
+
+
 def write(name: str, payload: dict, inputs: list[pathlib.Path]) -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     payload = {"experiment": name, "seed": SEED, "generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
                "inputs": {str(p.relative_to(ROOT)): sha(p) for p in inputs},
                "config": {"weights": load_weights(), "default_context": DEFAULT_CTX}, "output": payload}
     (OUT / f"{name}.json").write_text(json.dumps(payload, indent=2, sort_keys=True))
+    write_csv(name, payload["output"])
 
 
 def main() -> None:
@@ -146,7 +194,7 @@ def main() -> None:
     feeds = load_feeds()
     feed_inputs = [ROOT / "data" / "feeds" / "epss.csv", ROOT / "data" / "feeds" / "kev.json",
                    ROOT / "data" / "feeds" / "nvd_subset.json"]
-    detect, ranking, context, weights, ablation = {}, {}, {}, {}, {}
+    detect, ranking, context, weights, ablation, dedup = {}, {}, {}, {}, {}, {}
     for name in TARGETS:
         alerts = load_alerts(name)
         if alerts is None:
@@ -158,11 +206,13 @@ def main() -> None:
         context[name] = exp_context(alerts, feeds)
         weights[name] = exp_weights(alerts, feeds)
         ablation[name] = exp_ablation(alerts, feeds)
+        dedup[name] = exp_dedup(alerts)
         inp = [raw] + feed_inputs
         for n, data in (("exp2_ranking", ranking), ("exp3_context", context), ("exp4_weights", weights),
                         ("exp5_ablation", ablation)):
             write(n, data, inp)
     write("exp1_detection", detect, [RAW / f"{TARGETS[n][0]}_alerts.json" for n in detect])
+    write("exp6_dedup", dedup, [RAW / f"{TARGETS[n][0]}_alerts.json" for n in dedup])
     if args.store:
         from src import db
         with db.connect() as conn:

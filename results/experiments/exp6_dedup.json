@@ -1,0 +1,58 @@
+{
+  "config": {
+    "default_context": {
+      "business_impact": "Medium",
+      "criticality": "Medium",
+      "data_sensitivity": "Medium",
+      "internet_exposure": "Medium"
+    },
+    "weights": {
+      "C": 0.3,
+      "E": 0.3,
+      "S": 0.4
+    }
+  },
+  "experiment": "exp6_dedup",
+  "generated": "2026-11-21T09:55:16+00:00",
+  "inputs": {
+    "results/raw/bwapp_alerts.json": "23299667a8254b4e1b87aeb43f2d5cb7bdbdb360fc6324b81e0eaffae670715e",
+    "results/raw/dvwa_alerts.json": "fd17e83ea76771b1bc5ec79b378f11f959af9ae073f535fb2e2b9ea10fec9414",
+    "results/raw/juiceshop_alerts.json": "deab7cf60cd52da6e7e65a82edd0a626d945b1cbdd51b36f75badecf7e0258af",
+    "results/raw/webgoat_alerts.json": "abc59c2eb64062b25bb2166d5709005d987fd6f99f42cda21a6f8abbf78d3f4b"
+  },
+  "output": {
+    "bwapp": {
+      "distinct_path_param_pairs": 151,
+      "groups_with_repeats": 116,
+      "largest_group": 9,
+      "raw_alerts": 609,
+      "reduction_pct": 40.7,
+      "unique_findings": 361
+    },
+    "dvwa": {
+      "distinct_path_param_pairs": 127,
+      "groups_with_repeats": 183,
+      "largest_group": 6,
+      "raw_alerts": 775,
+      "reduction_pct": 29.8,
+      "unique_findings": 544
+    },
+    "juiceshop": {
+      "distinct_path_param_pairs": 207,
+      "groups_with_repeats": 72,
+      "largest_group": 45,
+      "raw_alerts": 731,
+      "reduction_pct": 39.1,
+      "unique_findings": 445
+    },
+    "webgoat": {
+      "distinct_path_param_pairs": 4,
+      "groups_with_repeats": 0,
+      "largest_group": 1,
+      "raw_alerts": 26,
+      "reduction_pct": 0.0,
+      "unique_findings": 26
+    }
+  },
+  "seed": 42
+}
