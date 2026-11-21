@@ -6,7 +6,7 @@ This page explains the parts of the system and how they talk to each other. You 
 
 | Part | Where it lives | What it does |
 |---|---|---|
-| **React frontend** | `frontend/`, port 8081 | The main interface: targets, new target, target detail, scan results with filters and explanations. Served by nginx |
+| **React frontend** | `frontend/`, port 80 | The main interface: targets, new target, target detail, scan results with filters and explanations. Served by nginx |
 | **Original web pages** | `src/web/`, port 8080 | The first server-rendered pages. Kept as a fallback |
 | **Web API** | `src/api/app.py` | The same actions as the web app, for scripts |
 | **Command line** | `src/cli.py` | The same actions from the terminal |

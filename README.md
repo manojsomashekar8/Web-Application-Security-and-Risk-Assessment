@@ -30,7 +30,7 @@ make experiments       # builds the results tables from the scans
 make down              # stops everything
 ```
 
-Then open the web app at http://127.0.0.1:8081 (log in with the username and password from your `.env` file). The dashboards are at http://127.0.0.1:3001.
+Then open the web app at http://127.0.0.1:80 (log in with the username and password from your `.env` file). The dashboards are at http://127.0.0.1:3001.
 
 New to the project? Read [EXPLAIN.md](EXPLAIN.md) for a full, plain-language walkthrough of how it works.
 

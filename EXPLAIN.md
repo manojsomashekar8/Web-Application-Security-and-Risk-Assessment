@@ -21,7 +21,7 @@ The project is a prototype. It has been checked on three deliberately vulnerable
        |                                               ^
        v                                               |
   [ React frontend ]  --/api-->  [ FastAPI backend ] --metrics--> [ Prometheus ] --> [ Grafana ]
-   nginx, port 8081               port 8080 (host)        |                              ^
+   nginx, port 80               port 8080 (host)        |                              ^
                                         |                  |                              |
                                         v                  v                              |
                                   [ ZAP scanner ]    [ PostgreSQL ] <--- read-only role -+
@@ -287,7 +287,7 @@ make down                # stop everything
 
 Then open:
 
-- http://127.0.0.1:8081 for the new React interface
+- http://127.0.0.1:80 for the new React interface
 - http://127.0.0.1:8080 for the original server-rendered pages
 - http://127.0.0.1:3001 for Grafana
 

@@ -15,7 +15,7 @@ Scan websites that have known security holes, then rank the problems by how risk
 5. **Enrichment.** Findings with a CVE number get severity and exploit data from saved public lists. Missing data shows as "n/a".
 6. **Scoring.** Each finding gets a risk score from 0 to 100 and a High, Medium or Low label. The explanation shows the arithmetic and the main limiting factor. See [SCORING.md](SCORING.md).
 7. **Rankings.** Four methods rank the findings, each from its own score. Ties share a deterministic order.
-8. **React web app** on port 8081. Add targets, start scans, see results with summary cards, filters and explanations.
+8. **React web app** on port 80. Add targets, start scans, see results with summary cards, filters and explanations.
 9. **Dashboards.** Grafana dashboards are loaded automatically at startup. They show scan status, risk, classification and raw versus unique counts.
 10. **Tests.** Automatic tests cover the clean-up, scoring, rankings, grouping and context sensitivity. Browser tests cover the React app, the original pages and Grafana.
 11. **Experiments.** Five experiments compare the scoring methods on saved scan results.

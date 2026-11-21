@@ -26,7 +26,7 @@ A checked box means the work is done and committed. Phase 7 is optional.
 - [x] Database tables and migrations, including a read-only account for dashboards
 - [x] API for targets, scans, findings, allowed targets and latest scan
 - [x] Original server-rendered pages (port 8080)
-- [x] React frontend in its own container (port 8081): targets, new target, target detail, results with summary, filters and explanations
+- [x] React frontend in its own container (port 80): targets, new target, target detail, results with summary, filters and explanations
 - [x] HTML and JSON reports (PDF not built)
 
 ## Phase 5: Dashboards and monitoring

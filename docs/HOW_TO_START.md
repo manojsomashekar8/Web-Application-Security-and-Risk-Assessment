@@ -30,7 +30,7 @@ After it finishes, these addresses work from your own computer:
 
 | What | Address | Login |
 |---|---|---|
-| **React web app (use this one)** | http://127.0.0.1:8081 | `WEB_USER` and `WEB_PASSWORD` from `.env` |
+| **React web app (use this one)** | http://127.0.0.1:80 | `WEB_USER` and `WEB_PASSWORD` from `.env` |
 | Original web pages | http://127.0.0.1:8080 | Same as above |
 | Dashboards (Grafana) | http://127.0.0.1:3001 | `admin` and `GRAFANA_ADMIN_PASSWORD` from `.env` |
 | Scanner (ZAP) | http://127.0.0.1:8090 | API key in `.env` |
@@ -55,7 +55,7 @@ WASRA_E2E=1 .venv/bin/python -m pytest tests/e2e
 
 Only the websites listed in [TARGETS.md](TARGETS.md) can be scanned.
 
-1. Open http://127.0.0.1:8081 and log in.
+1. Open http://127.0.0.1:80 and log in.
 2. Click **Add target** if the site is not listed yet. Pick a website and rate the business context (criticality, data sensitivity, exposure, impact).
 3. Open the target and click **Start scan**. The page updates by itself. A scan can take a long time.
 4. When it says `done`, you see the ranked findings. Click a row to read why it got its score.

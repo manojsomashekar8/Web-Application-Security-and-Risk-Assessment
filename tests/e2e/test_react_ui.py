@@ -1,4 +1,4 @@
-"""Browser test of the React frontend (port 8081): targets list, new target form, results page.
+"""Browser test of the React frontend (port 80): targets list, new target form, results page.
 
 Read-only. Run with WASRA_E2E=1 after `make up`. Needs at least one finished scan for the results check.
 """
@@ -8,7 +8,7 @@ import pathlib
 import pytest
 
 pytestmark = pytest.mark.skipif(os.environ.get("WASRA_E2E") != "1", reason="needs running stack and browser")
-BASE = "http://127.0.0.1:8081"
+BASE = "http://127.0.0.1:80"
 ENV = pathlib.Path(__file__).resolve().parents[2] / ".env"
 
 
