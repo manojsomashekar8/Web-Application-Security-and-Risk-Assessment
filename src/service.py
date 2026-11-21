@@ -11,6 +11,7 @@ from src.collectors import auth
 from src.collectors.zap_client import ZapClient
 from src.enrich.enrich import load_feeds
 from src.pipeline import run as run_pipeline
+from src.scoring.compare import top_k_overlap
 from src.scoring.score import LEVEL
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -58,35 +59,72 @@ def start_scan(target_id: int) -> int:
 _ZAP_LOCK = threading.Lock()  # one ZAP instance: scans run one at a time, the rest queue here
 
 
+def scan_rows(raw: list[dict], ctx: dict) -> tuple[list[dict], float | None]:
+    """Pipeline plus the top-10 overlap between the framework and CVSS-only rankings (None if no findings)."""
+    rows = run_pipeline(raw, ctx, load_feeds())
+    if not rows:
+        return rows, None
+    key = {r["fingerprint"]: r for r in rows}
+    overlap = top_k_overlap({k: r["rank_risk"] for k, r in key.items()},
+                            {k: r["rank_cvss_only"] for k, r in key.items()}, k=10)
+    return rows, overlap
+
+
+def _store_findings(conn, scan_id: int, rows: list[dict], ctx: dict) -> None:
+    for r in rows:
+        conn.execute(
+            "INSERT INTO findings (scan_id, plugin_id, type, cwe, owasp, url, zap_risk, zap_confidence, "
+            "cve, cvss, epss, kev, risk, weighted_sum, cvss_only, zap_risk_only, rank_risk, "
+            "rank_weighted_sum, rank_cvss_only, rank_zap_risk_only, explanation, factors, "
+            "classification, occurrences, fingerprint, provenance, enrichment_na) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s)",
+            (scan_id, r["id"], r["type"], r["cwe"], r["owasp"], r["url"], r["zap_risk"], r["zap_confidence"],
+             r["cve"], r["cvss"], r["epss"], r["kev"], r["risk"], r["weighted_sum"], r["cvss_only"],
+             r["zap_risk_only"], r["rank_risk"], r["rank_weighted_sum"], r["rank_cvss_only"],
+             r["rank_zap_risk_only"], r["explanation"], json.dumps({"S": r["S"], "E": r["E"],
+                                                                     "exposure": r["exposure"],
+                                                                     "I": r["I"], "L": r["L"], **ctx}),
+             r["classification"], r["occurrences"], r["fingerprint"], json.dumps(r["provenance"]),
+             r["enrichment_na"]),
+        )
+
+
 def _run_scan(scan_id: int, target_id: int) -> None:
     conn = db.connect()
     try:
         t = conn.execute("SELECT * FROM targets WHERE id=%s", (target_id,)).fetchone()
         zap = ZapClient(os.environ["ZAP_API_KEY"], os.environ.get("ZAP_URL", "http://zap:8090"))
         with _ZAP_LOCK:
-            zap.run(t["url"], cookie=auth.cookie_for(t["url"]))
+            timings = zap.run(t["url"], cookie=auth.cookie_for(t["url"]))
             raw = zap.alerts(t["url"])
+        conn.execute("UPDATE scans SET raw_alerts=%s::jsonb, stage_seconds=%s::jsonb WHERE id=%s",
+                     (json.dumps(raw), json.dumps(timings), scan_id))
         ctx = {k: t[k] for k in CONTEXT_FIELDS}
-        rows = run_pipeline(raw, ctx, load_feeds())
-        for r in rows:
-            conn.execute(
-                "INSERT INTO findings (scan_id, plugin_id, type, cwe, owasp, url, zap_risk, zap_confidence, "
-                "cve, cvss, epss, kev, risk, weighted_sum, cvss_only, zap_risk_only, rank_risk, "
-                "rank_weighted_sum, rank_cvss_only, rank_zap_risk_only, explanation, factors, "
-                "classification, occurrences, fingerprint) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                (scan_id, r["id"], r["type"], r["cwe"], r["owasp"], r["url"], r["zap_risk"], r["zap_confidence"],
-                 r["cve"], r["cvss"], r["epss"], r["kev"], r["risk"], r["weighted_sum"], r["cvss_only"],
-                 r["zap_risk_only"], r["rank_risk"], r["rank_weighted_sum"], r["rank_cvss_only"],
-                 r["rank_zap_risk_only"], r["explanation"], json.dumps({"S": r["S"], "E": r["E"],
-                                                                         "exposure": r["exposure"],
-                                                                         "I": r["I"], "L": r["L"], **ctx}),
-                 r["classification"], r["occurrences"], r["fingerprint"]),
-            )
-        conn.execute("UPDATE scans SET status='done', finished_at=now() WHERE id=%s", (scan_id,))
+        rows, overlap = scan_rows(raw, ctx)
+        _store_findings(conn, scan_id, rows, ctx)
+        conn.execute("UPDATE scans SET status='done', finished_at=now(), top10_overlap=%s WHERE id=%s",
+                     (overlap, scan_id))
     except Exception as exc:  # record failure, never leave the scan 'running'
         conn.execute("UPDATE scans SET status='failed', finished_at=now(), error=%s WHERE id=%s",
                      (str(exc)[:1000], scan_id))
+
+
+def rescore(scan_id: int) -> int:
+    """Recompute findings from the scan's stored raw alerts with the target's current context. No new scan."""
+    with db.connect() as conn:
+        s = conn.execute("SELECT s.raw_alerts, t.* FROM scans s JOIN targets t ON t.id = s.target_id "
+                         "WHERE s.id=%s", (scan_id,)).fetchone()
+        if s is None:
+            raise LookupError("no such scan")
+        if s["raw_alerts"] is None:
+            raise ValueError("this scan has no stored raw alerts (it ran before storage existed); run a new scan")
+        ctx = {k: s[k] for k in CONTEXT_FIELDS}
+        rows, overlap = scan_rows(s["raw_alerts"], ctx)
+        with conn.transaction():
+            conn.execute("DELETE FROM findings WHERE scan_id=%s", (scan_id,))
+            _store_findings(conn, scan_id, rows, ctx)
+            conn.execute("UPDATE scans SET top10_overlap=%s WHERE id=%s", (overlap, scan_id))
+    return len(rows)
 
 
 def findings_for_scan(scan_id: int) -> list[dict]:
