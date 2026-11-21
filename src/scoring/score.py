@@ -47,11 +47,33 @@ def band(score: float) -> str:
     return "High" if score >= 60 else "Medium" if score >= 30 else "Low"
 
 
-def explain(f: dict, ctx: dict, score: float) -> str:
-    kev = "KEV-listed" if f.get("kev") else "not KEV-listed"
-    return (f"{band(score)}: {kev}, internet exposure {ctx['internet_exposure']}, "
-            f"criticality {ctx['criticality']}, data sensitivity {ctx['data_sensitivity']}, "
-            f"business impact {ctx['business_impact']}.")
+def severity_source(f: dict) -> str:
+    return f"CVSS {f['cvss']}" if f.get("cvss") is not None else f"ZAP risk {f.get('zap_risk', 'n/a')}"
+
+
+def exploitability_source(f: dict) -> str:
+    if f.get("kev"):
+        return "on CISA KEV list"
+    if f.get("epss") is not None:
+        return f"EPSS {f['epss']:.3f}"
+    return f"ZAP confidence {f.get('zap_confidence', 'n/a')}"
+
+
+def explain(f: dict, ctx: dict, r: dict) -> str:
+    """Plain-text explanation built from the same numbers that produced the score and label."""
+    label = band(r["risk"])
+    limiting = min(("severity", r["S"]), ("exploitability", r["E"]), ("internet exposure", r["exposure"]),
+                   key=lambda kv: kv[1])
+    lines = [
+        f"Risk {r['risk']:.1f} ({label}). Thresholds: High 60+, Medium 30 to 59.9, Low below 30.",
+        f"Likelihood {r['L']:.2f} = exploitability {r['E']:.2f} ({exploitability_source(f)}) "
+        f"x internet exposure {r['exposure']:.2f} ({ctx['internet_exposure']}).",
+        f"Impact {r['I']:.2f} = severity {r['S']:.2f} ({severity_source(f)}) "
+        f"x mean of criticality {ctx['criticality']}, data sensitivity {ctx['data_sensitivity']}, "
+        f"business impact {ctx['business_impact']}.",
+        f"Main limit: {limiting[0]} {limiting[1]:.2f}.",
+    ]
+    return " ".join(lines)
 
 
 def score_finding(f: dict, ctx: dict, w: dict | None = None) -> dict:
@@ -60,5 +82,5 @@ def score_finding(f: dict, ctx: dict, w: dict | None = None) -> dict:
     w = w or load_weights()
     out = {**r, "weighted_sum": weighted_sum(s, e, ctx, w),
            "cvss_only": 100 * s, "zap_risk_only": 100 * f["zap_risk_score"]}
-    out["explanation"] = explain(f, ctx, r["risk"])
+    out["explanation"] = explain(f, ctx, r)
     return out

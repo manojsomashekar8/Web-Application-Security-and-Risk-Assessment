@@ -80,7 +80,18 @@ def test_band_boundaries():
 
 def test_explanation_mentions_factors():
     text = score_finding(fnd(kev=True, cvss=10.0), CTX_HI, W)["explanation"]
-    assert text.startswith("High:") and "KEV-listed" in text and "internet exposure High" in text
+    assert text.startswith("Risk 100.0 (High).") and "on CISA KEV list" in text and "internet exposure 1.00 (High)" in text
+
+
+def test_explanation_label_matches_score_band():
+    # the label in the text must always be the band of the number it is printed with
+    rng = random.Random(7)
+    for _ in range(300):
+        f = fnd(zap_risk="Medium", zap_confidence="Medium", zap_risk_score=rng.random(),
+                zap_confidence_score=rng.random(), kev=rng.random() < 0.2, epss=rng.choice([None, rng.random()]))
+        ctx = {k: rng.choice(list(LEVEL)) for k in CTX_HI}
+        r = score_finding(f, ctx, W)
+        assert f"({band(r['risk'])})" in r["explanation"]
 
 
 def test_weighted_sum_formula():
