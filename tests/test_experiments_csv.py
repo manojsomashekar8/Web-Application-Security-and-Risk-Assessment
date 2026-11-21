@@ -10,9 +10,8 @@ def test_list_per_target_becomes_rows():
 def test_dict_of_dicts_gets_item_column_and_nested_json():
     rows = to_csv_rows({"dvwa": {"CVSS-only": {"tau": 0.5, "top10_overlap": 0.2}}})
     assert rows == [{"target": "dvwa", "item": "CVSS-only", "tau": 0.5, "top10_overlap": 0.2}]
-    rows = to_csv_rows({"dvwa": {"weights": {"S": 0.4}}})
-    assert rows[0]["value"] if "value" in rows[0] else True
-    assert '"S": 0.4' in str(rows[0].get("weights", "")) or '"S": 0.4' in str(rows)
+    rows = to_csv_rows({"dvwa": [{"weight": "S", "weights": {"S": 0.4, "E": 0.3, "C": 0.3}}]})
+    assert rows[0]["weight"] == "S" and '"S": 0.4' in rows[0]["weights"]  # nested dict stored as JSON text
 
 
 def test_dedup_counts_repeats_and_keeps_distinct_params_apart():
