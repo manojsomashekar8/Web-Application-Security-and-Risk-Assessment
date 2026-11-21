@@ -45,3 +45,15 @@ The **Re-score** button recomputes the findings from the scan's stored raw alert
 | "422" with "allowlist" | The website is not on `docs/TARGETS.md` | Use an allowed site |
 | "409: this scan has no stored raw alerts" | Re-score on an old scan | Run a new scan |
 | Status panel shows ZAP or Postgres as failed | The service is down or not ready | Run `docker compose ps`, then `make up` |
+
+## Grafana: validation dashboard
+
+Open http://127.0.0.1:3001, then **WASRA validation**.
+
+- **Run date** (top of the page). `latest` (the default) shows the most recent run for each target, one row per target. Pick a date to see that run.
+- **Validation results** table: Target, Known types, Detected types, Matching alerts, Total alerts, Precision, Recall, Run time.
+  - Precision = Matching alerts / Total alerts. Recall = Known types detected / Known types.
+  - "Coverage too low" replaces precision and recall when a target reached fewer than 10 pages (`configs/validation.json`). It is never shown as 0.
+- **Recall by category**: for each known vulnerability category of each app, Detected or Missed. "Coverage too low" when the run did not reach enough pages.
+- **Recall by target**: the same recall as a bar chart. Blank bars mean coverage too low.
+- The note panel explains why precision is low: most ZAP alerts are informational (headers, cookie flags, version leaks) and do not match a known vulnerability type.
