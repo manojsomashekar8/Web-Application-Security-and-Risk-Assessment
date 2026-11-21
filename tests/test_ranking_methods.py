@@ -42,3 +42,14 @@ def test_no_cve_means_cvss_and_zap_rankings_agree():
     # Without a CVE, CVSS-only falls back to ZAP risk, so the two baselines must be identical.
     rows = run([alert("1", "High", "Low"), alert("2", "Medium", "High"), alert("3", "Low", "Medium")], CTX, FEEDS)
     assert all(r["rank_cvss_only"] == r["rank_zap_risk_only"] for r in rows)
+
+
+def test_context_change_moves_framework_score_but_not_cvss_only():
+    # Same vulnerability, only the business context changes (review: context sensitivity).
+    raw = [alert("1", "High", "High"), alert("2", "Medium", "Medium")]
+    low = {k: "Low" for k in CTX}
+    hi = run(raw, CTX, FEEDS)
+    lo = run(raw, low, FEEDS)
+    assert {r["id"]: r["cvss_only"] for r in hi} == {r["id"]: r["cvss_only"] for r in lo}
+    assert {r["id"]: r["risk"] for r in hi} != {r["id"]: r["risk"] for r in lo}
+    assert all(r["risk"] > l["risk"] for r, l in zip(sorted(hi, key=lambda x: x["id"]), sorted(lo, key=lambda x: x["id"])))
