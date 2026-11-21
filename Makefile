@@ -51,6 +51,7 @@ clean:  ## remove containers, volumes and generated reports (keeps data/feeds an
 reproduce:  ## full run from a clean state: env, stack, tests, scan, report, reproducibility doc
 	$(MAKE) clean
 	$(MAKE) up
+	DATABASE_URL="$(DBURL)" $(PY) -m src.experiments.run --store
 	WASRA_INTEGRATION=1 WASRA_E2E=1 $(MAKE) test
 	$(MAKE) scan-juiceshop
 	$(MAKE) report
