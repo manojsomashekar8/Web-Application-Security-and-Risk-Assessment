@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api.js";
 import { StatusBadge } from "../components.jsx";
+import Status from "./Status.jsx";
 
 export default function Targets() {
   const [rows, setRows] = useState(null);
@@ -22,6 +23,7 @@ export default function Targets() {
         <h1>Targets</h1>
         <Link className="button" to="/targets/new">Add target</Link>
       </div>
+      <Status />
       {error && <p className="error">{error}</p>}
       {!rows && !error && <p className="muted">Loading targets...</p>}
       {rows && rows.length === 0 && <p className="muted">No targets yet. Add one to start a scan.</p>}

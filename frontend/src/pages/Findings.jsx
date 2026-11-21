@@ -13,6 +13,21 @@ export default function Findings() {
   const [cls, setCls] = useState("all");
   const [bandFilter, setBandFilter] = useState("all");
   const [open, setOpen] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  // Recompute from the stored raw alerts with the target's current context. No new scan is started.
+  async function rescore() {
+    setBusy(true);
+    setError("");
+    try {
+      await api(`/scans/${id}/rescore`, { method: "POST" });
+      setRows(await api(`/scans/${id}/findings`));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   // Poll the scan until it finishes, then load its findings once.
   useEffect(() => {
@@ -63,7 +78,10 @@ export default function Findings() {
     <section>
       <div className="row between">
         <h1>Scan #{id} results</h1>
-        <a className="button ghost" href={`/api/scans/${id}/report.json`}>Download JSON report</a>
+        <div className="row">
+          <button className="button ghost" onClick={rescore} disabled={busy}>{busy ? "Re-scoring..." : "Re-score"}</button>
+          <a className="button ghost" href={`/api/scans/${id}/report.json`}>Download JSON report</a>
+        </div>
       </div>
 
       <div className="cards stats">
