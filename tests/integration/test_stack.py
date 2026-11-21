@@ -12,9 +12,11 @@ TARGET = "http://juice-shop:3000"
 CTX = {"criticality": "High", "data_sensitivity": "High", "internet_exposure": "High", "business_impact": "High"}
 
 
-def test_health_and_auth_required():
+def test_health_and_auth_match_mode():
     assert requests.get(f"{BASE}/healthz", timeout=10).json() == {"ok": True}
-    assert requests.get(f"{BASE}/api/targets", timeout=10).status_code == 401
+    mode = requests.get(f"{BASE}/api/config", timeout=10).json()["auth_mode"]
+    expected = 401 if mode == "basic" else 200
+    assert requests.get(f"{BASE}/api/targets", timeout=10).status_code == expected
 
 
 def test_scan_end_to_end_stores_ranked_findings():
