@@ -1,5 +1,6 @@
 {% extends "base.html" %}{% block title %}Findings{% endblock %}{% block content %}
 <h1>Ranked findings (scan #{{ sid }})</h1>
+<p><a href="/api/scans/{{ sid }}/report.json">JSON report</a></p>
 <p>Ranked by framework risk. Click a row for factors and explanation.</p>
 <table><thead><tr><th>Rank</th><th>Type</th><th>URL</th><th>ZAP risk</th><th>CVSS</th><th>EPSS</th><th>KEV</th>
 <th>Framework</th><th>CVSS-only rank</th><th>ZAP-risk rank</th><th>Weighted rank</th></tr></thead><tbody>
