@@ -13,7 +13,7 @@
     }
   },
   "experiment": "exp2_ranking",
-  "generated": "2026-11-18T03:44:59+00:00",
+  "generated": "2026-11-21T09:40:18+00:00",
   "inputs": {
     "data/feeds/epss.csv": "d8d6ca2ed7bfd1d183e54effc5fa4902e5e06595b3a773b93b2dd0623114172b",
     "data/feeds/kev.json": "4028ec035856331a717d3305e87e45be37d400fc500da34a5464f05fc2773764",
@@ -23,30 +23,44 @@
   "output": {
     "bwapp": {
       "CVSS-only": {
-        "tau": 0.6464,
+        "tau": 0.566,
         "top10_overlap": 0.0
       },
       "Weighted sum": {
-        "tau": 0.9932,
+        "tau": 0.9847,
         "top10_overlap": 1.0
       },
       "ZAP-risk-only": {
-        "tau": 0.6464,
+        "tau": 0.566,
         "top10_overlap": 0.0
       }
     },
     "dvwa": {
       "CVSS-only": {
-        "tau": 0.707,
+        "tau": 0.7401,
         "top10_overlap": 0.1
       },
       "Weighted sum": {
-        "tau": 0.9872,
+        "tau": 0.9826,
         "top10_overlap": 1.0
       },
       "ZAP-risk-only": {
-        "tau": 0.707,
+        "tau": 0.7401,
         "top10_overlap": 0.1
+      }
+    },
+    "juiceshop": {
+      "CVSS-only": {
+        "tau": 0.9711,
+        "top10_overlap": 0.8
+      },
+      "Weighted sum": {
+        "tau": 0.8803,
+        "top10_overlap": 1.0
+      },
+      "ZAP-risk-only": {
+        "tau": 0.9711,
+        "top10_overlap": 0.8
       }
     },
     "webgoat": {

@@ -13,7 +13,7 @@
     }
   },
   "experiment": "exp5_ablation",
-  "generated": "2026-11-18T03:44:59+00:00",
+  "generated": "2026-11-21T09:40:18+00:00",
   "inputs": {
     "data/feeds/epss.csv": "d8d6ca2ed7bfd1d183e54effc5fa4902e5e06595b3a773b93b2dd0623114172b",
     "data/feeds/kev.json": "4028ec035856331a717d3305e87e45be37d400fc500da34a5464f05fc2773764",
@@ -24,7 +24,7 @@
     "bwapp": [
       {
         "removed": "E",
-        "tau_vs_full": 0.6464,
+        "tau_vs_full": 0.566,
         "top10_overlap": 0.0
       },
       {
@@ -41,8 +41,25 @@
     "dvwa": [
       {
         "removed": "E",
-        "tau_vs_full": 0.707,
+        "tau_vs_full": 0.7401,
         "top10_overlap": 0.1
+      },
+      {
+        "removed": "exposure",
+        "tau_vs_full": 1.0,
+        "top10_overlap": 1.0
+      },
+      {
+        "removed": "context",
+        "tau_vs_full": 1.0,
+        "top10_overlap": 1.0
+      }
+    ],
+    "juiceshop": [
+      {
+        "removed": "E",
+        "tau_vs_full": 0.9711,
+        "top10_overlap": 0.8
       },
       {
         "removed": "exposure",

@@ -13,7 +13,7 @@
     }
   },
   "experiment": "exp4_weights",
-  "generated": "2026-11-18T03:44:59+00:00",
+  "generated": "2026-11-21T09:40:18+00:00",
   "inputs": {
     "data/feeds/epss.csv": "d8d6ca2ed7bfd1d183e54effc5fa4902e5e06595b3a773b93b2dd0623114172b",
     "data/feeds/kev.json": "4028ec035856331a717d3305e87e45be37d400fc500da34a5464f05fc2773764",
@@ -24,7 +24,7 @@
     "bwapp": [
       {
         "delta": -0.1,
-        "tau_vs_default_weighted": 0.8979,
+        "tau_vs_default_weighted": 0.9321,
         "top10_overlap": 1.0,
         "weight": "S",
         "weights": {
@@ -35,7 +35,7 @@
       },
       {
         "delta": 0.1,
-        "tau_vs_default_weighted": 0.9995,
+        "tau_vs_default_weighted": 0.9985,
         "top10_overlap": 1.0,
         "weight": "S",
         "weights": {
@@ -46,7 +46,7 @@
       },
       {
         "delta": -0.1,
-        "tau_vs_default_weighted": 0.9995,
+        "tau_vs_default_weighted": 0.9985,
         "top10_overlap": 1.0,
         "weight": "E",
         "weights": {
@@ -57,7 +57,7 @@
       },
       {
         "delta": 0.1,
-        "tau_vs_default_weighted": 0.8979,
+        "tau_vs_default_weighted": 0.9321,
         "top10_overlap": 1.0,
         "weight": "E",
         "weights": {
@@ -92,7 +92,7 @@
     "dvwa": [
       {
         "delta": -0.1,
-        "tau_vs_default_weighted": 0.9827,
+        "tau_vs_default_weighted": 0.9788,
         "top10_overlap": 0.9,
         "weight": "S",
         "weights": {
@@ -103,7 +103,7 @@
       },
       {
         "delta": 0.1,
-        "tau_vs_default_weighted": 0.9992,
+        "tau_vs_default_weighted": 0.9988,
         "top10_overlap": 1.0,
         "weight": "S",
         "weights": {
@@ -114,7 +114,7 @@
       },
       {
         "delta": -0.1,
-        "tau_vs_default_weighted": 0.9992,
+        "tau_vs_default_weighted": 0.9988,
         "top10_overlap": 1.0,
         "weight": "E",
         "weights": {
@@ -125,8 +125,76 @@
       },
       {
         "delta": 0.1,
-        "tau_vs_default_weighted": 0.9827,
+        "tau_vs_default_weighted": 0.9788,
         "top10_overlap": 0.9,
+        "weight": "E",
+        "weights": {
+          "C": 0.2727,
+          "E": 0.3636,
+          "S": 0.3636
+        }
+      },
+      {
+        "delta": -0.1,
+        "tau_vs_default_weighted": 1.0,
+        "top10_overlap": 1.0,
+        "weight": "C",
+        "weights": {
+          "C": 0.2222,
+          "E": 0.3333,
+          "S": 0.4444
+        }
+      },
+      {
+        "delta": 0.1,
+        "tau_vs_default_weighted": 1.0,
+        "top10_overlap": 1.0,
+        "weight": "C",
+        "weights": {
+          "C": 0.3636,
+          "E": 0.2727,
+          "S": 0.3636
+        }
+      }
+    ],
+    "juiceshop": [
+      {
+        "delta": -0.1,
+        "tau_vs_default_weighted": 0.9962,
+        "top10_overlap": 1.0,
+        "weight": "S",
+        "weights": {
+          "C": 0.3333,
+          "E": 0.3333,
+          "S": 0.3333
+        }
+      },
+      {
+        "delta": 0.1,
+        "tau_vs_default_weighted": 1.0,
+        "top10_overlap": 1.0,
+        "weight": "S",
+        "weights": {
+          "C": 0.2727,
+          "E": 0.2727,
+          "S": 0.4545
+        }
+      },
+      {
+        "delta": -0.1,
+        "tau_vs_default_weighted": 1.0,
+        "top10_overlap": 1.0,
+        "weight": "E",
+        "weights": {
+          "C": 0.3333,
+          "E": 0.2222,
+          "S": 0.4444
+        }
+      },
+      {
+        "delta": 0.1,
+        "tau_vs_default_weighted": 0.9962,
+        "top10_overlap": 1.0,
         "weight": "E",
         "weights": {
           "C": 0.2727,
