@@ -75,3 +75,32 @@ def test_overview_has_target_variable_and_new_panels(page):
 def test_every_provisioned_dashboard_is_present(page):
     titles = {d["title"] for d in page.request.get(f"{BASE}/api/search?type=dash-db").json()}
     assert {"WASRA overview", "WASRA ranking stability", "WASRA validation"} <= titles
+
+
+def _ds_query(page, sql: str) -> dict:
+    """Run one SQL query through Grafana's own query API (the same path the panels use)."""
+    body = {"queries": [{"refId": "A", "datasource": {"type": "postgres", "uid": "wasra-db"},
+                         "rawSql": sql, "format": "table", "rawQuery": True}],
+            "from": "now-6h", "to": "now"}
+    return page.request.post(f"{BASE}/api/ds/query", data=body).json()["results"]["A"]
+
+
+def _validation_sql(page) -> list[tuple[str, str]]:
+    found = page.request.get(f"{BASE}/api/search?query=WASRA%20validation").json()
+    uid = next(d["uid"] for d in found if d["title"] == "WASRA validation")
+    dash = page.request.get(f"{BASE}/api/dashboards/uid/{uid}").json()["dashboard"]
+    return [(p["title"], t["rawSql"]) for p in dash["panels"] for t in p.get("targets", []) if t.get("rawSql")]
+
+
+def test_validation_panels_load(page):
+    for title, sql in _validation_sql(page):
+        result = _ds_query(page, sql.replace("$run_date", "latest"))
+        assert "error" not in result, f"{title}: {result.get('error')}"
+
+
+def test_latest_run_filter_returns_one_row_per_target(page):
+    sql = next(s for t, s in _validation_sql(page) if t.startswith("Validation results"))
+    rows = _ds_query(page, sql.replace("$run_date", "latest"))["frames"][0]["data"]["values"]
+    targets = rows[0]
+    distinct = _ds_query(page, "SELECT count(DISTINCT target) AS n FROM validation_results")["frames"][0]["data"]["values"][0][0]
+    assert len(targets) == len(set(targets)) == distinct, (len(targets), distinct)
