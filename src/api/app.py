@@ -7,7 +7,7 @@ from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, generate_l
 from fastapi.responses import Response
 
 from src import db, service
-from src.api.auth import require_auth
+from src.api.auth import auth_mode, require_auth
 from src.metrics.exporter import WasraCollector
 from src.report.build import build_report
 from src.web.routes import router as web_router
@@ -42,6 +42,11 @@ def create_target(body: dict):
     if errors:
         raise HTTPException(422, errors)
     return {"id": service.create_target(body["name"], body["url"], ctx)}
+
+
+@app.get("/api/config")
+def config():
+    return {"auth_mode": auth_mode()}  # public: the frontend reads it before it can log in
 
 
 @app.get("/api/allowed-targets", dependencies=[Depends(require_auth)])

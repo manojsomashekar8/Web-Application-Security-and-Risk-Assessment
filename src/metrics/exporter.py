@@ -6,6 +6,10 @@ from src import db
 
 
 class WasraCollector(Collector):
+    def describe(self):
+        # Empty on purpose: registering must not query the database (prometheus_client calls collect() otherwise).
+        return []
+
     def collect(self):
         with db.connect() as conn:
             scans = GaugeMetricFamily("wasra_scans", "Scans by status", labels=["status"])
