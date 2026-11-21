@@ -49,6 +49,8 @@ def test_new_target_form_offers_allowlisted_sites(page):
 
 
 def test_results_page_shows_summary_and_expands_row(page):
+    if page.request.get(f"{BASE}/api/scans/1").json().get("status") != "done":
+        pytest.skip("no finished scan 1 yet (run make scan-juiceshop first)")
     page.goto(f"{BASE}/scans/1")
     page.wait_for_load_state("networkidle")
     assert page.get_by_text("Raw alerts").is_visible()
