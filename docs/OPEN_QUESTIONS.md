@@ -45,3 +45,11 @@ What is still unresolved, and what is needed to settle each item.
 ## 7. Missing documents
 
 `TEST_PLAN.md`, `UI.md`, `LITERATURE.md` and `REPRODUCIBILITY.md` have not been written.
+
+## make reproduce attempt 5: Docker stopped during the final scan
+
+- What happened: all tests passed (91 unit and browser, 8 integration). The last step, the Juice Shop scan through the CLI, failed because the Docker daemon stopped at 19:07:47 (systemd: docker.service deactivated, not started again). The CLI then received no JSON and exited with an error. The report and the reproducibility file were not written.
+- Cause: not known from the logs. Nothing in this session stopped Docker. The daemon was stopped by systemd, so it may have been stopped by hand or by a system action.
+- Default used: do not restart Docker or rerun the whole reproduce without your go-ahead, because a restart may be unwanted.
+- Needed: confirm whether Docker should be running. If yes, the default next step is `sudo systemctl start docker`, then `make up`, then the final scan and report steps (`make scan-juiceshop`, `make report`, `scripts/gen_reproducibility.py`).
+- The database backup from before the reproduce runs is at ~/backups/wasra-before-rescan.sql.
