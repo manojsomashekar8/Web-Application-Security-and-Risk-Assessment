@@ -6,13 +6,15 @@ This page explains the parts of the system and how they talk to each other. You 
 
 | Part | Where it lives | What it does |
 |---|---|---|
-| **Web app** | `src/web/` | The pages you click through: list targets, add a target, start a scan, see ranked findings |
+| **React frontend** | `frontend/`, port 8081 | The main interface: targets, new target, target detail, scan results with filters and explanations. Served by nginx |
+| **Original web pages** | `src/web/`, port 8080 | The first server-rendered pages. Kept as a fallback |
 | **Web API** | `src/api/app.py` | The same actions as the web app, for scripts |
 | **Command line** | `src/cli.py` | The same actions from the terminal |
 | **Services** | `src/service.py` | The rules: check the target is allowed, store records, run one scan at a time |
 | **Scanner client** | `src/collectors/zap_client.py` | Tells the OWASP ZAP scanner what to do and collects the results |
 | **Logins for practice sites** | `src/collectors/auth.py` | Logs in to the practice websites so the scanner can see the pages behind the login |
 | **Clean-up** | `src/normalize/` | Turns the scanner's raw output into one common format |
+| **Triage** | `src/triage.py` | Labels each alert (vulnerability, potential, informational, excluded) and merges repeated alerts |
 | **Adding facts** | `src/enrich/` | Adds severity and exploit data from saved copies of public lists |
 | **Scoring** | `src/scoring/` | Computes the risk score and the comparison scores (see [Scoring](SCORING.md)) |
 | **Pipeline** | `src/pipeline.py` | Runs clean-up, adding facts, scoring and ranking in order. The web app, command line and experiments all use this |

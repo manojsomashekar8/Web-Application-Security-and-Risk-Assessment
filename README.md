@@ -30,7 +30,9 @@ make experiments       # builds the results tables from the scans
 make down              # stops everything
 ```
 
-Then open the web app at http://127.0.0.1:8080 (log in with the username and password from your `.env` file) and the monitoring dashboards at http://127.0.0.1:3001.
+Then open the web app at http://127.0.0.1:8081 (log in with the username and password from your `.env` file). The dashboards are at http://127.0.0.1:3001.
+
+New to the project? Read [EXPLAIN.md](EXPLAIN.md) for a full, plain-language walkthrough of how it works.
 
 ## Where things are
 
@@ -46,6 +48,7 @@ Then open the web app at http://127.0.0.1:8080 (log in with the username and pas
 
 ## Documentation
 
+- [EXPLAIN](EXPLAIN.md): the whole project, step by step
 - [Plan](docs/PLAN.md): what is built and what is left
 - [Architecture](docs/ARCHITECTURE.md): how the parts fit together
 - [Scoring](docs/SCORING.md): how the risk score is worked out
