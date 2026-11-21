@@ -1,5 +1,5 @@
 target,pages_reached,coverage_ok,alerts,total_alerts,matching_alerts,true_pos_alerts,known_classes,detected_classes,missed_classes,precision,recall
-juiceshop,159,True,731,731,130,130,6,2,"[""Broken access control"", ""Cross-site scripting"", ""Path traversal"", ""Sensitive data exposure""]",0.1778,0.3333
+juiceshop,386,True,1103,1103,322,322,6,2,"[""Broken access control"", ""Cross-site scripting"", ""Path traversal"", ""Sensitive data exposure""]",0.2919,0.3333
 dvwa,71,True,775,775,5,5,7,2,"[""Broken authentication"", ""Cross-site scripting"", ""File inclusion"", ""OS command injection"", ""Unrestricted file upload""]",0.0065,0.2857
 webgoat,2,False,26,26,0,0,7,0,"[""Broken access control"", ""Cross-site request forgery"", ""Cross-site scripting"", ""Insecure deserialization"", ""Path traversal"", ""SQL injection"", ""XML external entity""]",,
 bwapp,94,True,609,609,17,17,8,1,"[""Cross-site scripting"", ""File inclusion"", ""HTTP response splitting"", ""OS command injection"", ""Path traversal"", ""SQL injection"", ""XML external entity""]",0.0279,0.125

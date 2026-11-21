@@ -1,7 +1,7 @@
 target,item,tau,top10_overlap
-juiceshop,CVSS-only,0.9711,0.8
-juiceshop,ZAP-risk-only,0.9711,0.8
-juiceshop,Weighted sum,0.8803,1.0
+juiceshop,CVSS-only,0.976,0.8
+juiceshop,ZAP-risk-only,0.976,0.8
+juiceshop,Weighted sum,0.912,1.0
 dvwa,CVSS-only,0.7401,0.1
 dvwa,ZAP-risk-only,0.7401,0.1
 dvwa,Weighted sum,0.9826,1.0

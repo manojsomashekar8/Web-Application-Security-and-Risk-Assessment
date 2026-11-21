@@ -1,5 +1,5 @@
 target,raw_alerts,unique_findings,reduction_pct,largest_group,groups_with_repeats,distinct_path_param_pairs
-juiceshop,731,445,39.1,45,72,207
+juiceshop,1103,493,55.3,189,72,264
 dvwa,775,544,29.8,6,183,127
 webgoat,26,26,0.0,1,0,4
 bwapp,609,361,40.7,9,116,151

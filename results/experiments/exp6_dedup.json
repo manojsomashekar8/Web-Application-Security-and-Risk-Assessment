@@ -13,11 +13,11 @@
     }
   },
   "experiment": "exp6_dedup",
-  "generated": "2026-11-21T10:01:22+00:00",
+  "generated": "2026-11-21T10:14:20+00:00",
   "inputs": {
     "results/raw/bwapp_alerts.json": "23299667a8254b4e1b87aeb43f2d5cb7bdbdb360fc6324b81e0eaffae670715e",
     "results/raw/dvwa_alerts.json": "fd17e83ea76771b1bc5ec79b378f11f959af9ae073f535fb2e2b9ea10fec9414",
-    "results/raw/juiceshop_alerts.json": "deab7cf60cd52da6e7e65a82edd0a626d945b1cbdd51b36f75badecf7e0258af",
+    "results/raw/juiceshop_alerts.json": "e0abda5ef9401dafb77db6c0bf3d3cf6c6e17943bd5dde375d6754437d544378",
     "results/raw/webgoat_alerts.json": "abc59c2eb64062b25bb2166d5709005d987fd6f99f42cda21a6f8abbf78d3f4b"
   },
   "output": {
@@ -38,12 +38,12 @@
       "unique_findings": 544
     },
     "juiceshop": {
-      "distinct_path_param_pairs": 207,
+      "distinct_path_param_pairs": 264,
       "groups_with_repeats": 72,
-      "largest_group": 45,
-      "raw_alerts": 731,
-      "reduction_pct": 39.1,
-      "unique_findings": 445
+      "largest_group": 189,
+      "raw_alerts": 1103,
+      "reduction_pct": 55.3,
+      "unique_findings": 493
     },
     "webgoat": {
       "distinct_path_param_pairs": 4,
