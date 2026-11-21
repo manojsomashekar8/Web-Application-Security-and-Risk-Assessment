@@ -1,35 +1,47 @@
 # Open questions
 
-This page lists what is still unresolved. Each item says what we know and what is needed.
+What is still unresolved, and what is needed to settle each item.
 
-## 1. PDF reports
+## 1. WebGoat coverage
 
-Not built. We only make HTML and JSON reports. If you need PDF, tell us and we will add it (see [Decisions](DECISIONS.md), D6).
+**Problem:** the scanner reached only 2 pages on WebGoat, so its results say nothing about detection.
 
-## 2. WebGoat coverage
+**Why:** WebGoat is a single-page app. Its lessons load through JavaScript after the front page, and the scanner's spider cannot find them. The login cookie works.
 
-**Problem:** the scanner only reached 2 pages on WebGoat, so its results show nothing useful yet.
+**Options:** start the scan from WebGoat's API endpoints, or report WebGoat as "coverage too low to judge" and leave it out of comparisons.
 
-**Why:** WebGoat is a single-page app. Its lessons load through JavaScript after the front page, and the scanner's spider cannot find them. The login cookie works, so the login itself is fine.
+**Needed:** a decision on which option to take.
 
-**Options:**
-- Start the scan from the API endpoints that WebGoat uses, if we can list them.
-- Or report WebGoat as "coverage too low to judge" and leave it out of the comparison.
+## 2. Juice Shop scan time
 
-**Decision needed:** which option to take.
+**Problem:** the full Juice Shop scan has not been timed. The end-to-end test waits up to one hour.
 
-## 3. Juice Shop scan time
+**Needed:** one timed run, with the time for each stage recorded.
 
-**Problem:** we have not measured how long the full Juice Shop scan takes. The test that runs it waits up to one hour before it gives up.
+## 3. Enrichment provenance and failures (review P1)
 
-**Needed:** one timed run, with the time for each stage (normal spider, AJAX spider, active scan) recorded.
+**Problem:** the pipeline does not yet record where each CVSS, EPSS and KEV value came from (which feed file and date). If a feed file is missing, the whole scan fails instead of continuing without that enrichment.
 
-## 4. Pushing commits to GitHub
+**Needed:** record the feed name and snapshot date on each finding, and make a missing feed produce "n/a" values instead of stopping the scan.
 
-**Problem:** about 30 local commits have not been pushed. The GitHub account used on this machine is not allowed to write to the project's repository.
+## 4. Deduplication test (review recommendation)
 
-**Needed:** either push access for this account, or the owner pushing the commits.
+**Problem:** grouping works and has unit tests, but there is no experiment that compares raw versus unique counts on a scan with known repeats.
 
-## 5. Missing documents
+**Needed:** add the deduplication experiment to `src/experiments/run.py`.
 
-The plan lists four documents that do not exist yet: `TEST_PLAN.md`, `UI.md`, `LITERATURE.md` and `REPRODUCIBILITY.md`.
+## 5. Older scan not regrouped
+
+**Problem:** scan 1 (Juice Shop) was stored before grouping existed. Its 13 rows are classified correctly now, but its repeated alerts were not merged, so its "raw" and "unique" counts are equal.
+
+**Needed:** re-run the scan with the current code, or accept scan 1 as the pre-grouping baseline and say so in the results.
+
+## 6. Pushing commits to GitHub
+
+**Problem:** the local commits have not all been pushed. The GitHub account on this machine cannot write to the project's repository.
+
+**Needed:** push access for this account, or the owner pushing the commits.
+
+## 7. Missing documents
+
+`TEST_PLAN.md`, `UI.md`, `LITERATURE.md` and `REPRODUCIBILITY.md` have not been written.
