@@ -37,13 +37,21 @@ def validate_target(name: str, url: str, ctx: dict) -> list[str]:
     return errors
 
 
+class DuplicateTarget(Exception):
+    """A target with this URL already exists (targets.url is unique)."""
+
+
 def create_target(name: str, url: str, ctx: dict) -> int:
-    with db.connect() as conn:
-        row = conn.execute(
-            "INSERT INTO targets (name, url, criticality, data_sensitivity, internet_exposure, business_impact) "
-            "VALUES (%s,%s,%s,%s,%s,%s) RETURNING id",
-            (name.strip(), url, *(ctx[k] for k in CONTEXT_FIELDS)),
-        ).fetchone()
+    import psycopg.errors
+    try:
+        with db.connect() as conn:
+            row = conn.execute(
+                "INSERT INTO targets (name, url, criticality, data_sensitivity, internet_exposure, business_impact) "
+                "VALUES (%s,%s,%s,%s,%s,%s) RETURNING id",
+                (name.strip(), url, *(ctx[k] for k in CONTEXT_FIELDS)),
+            ).fetchone()
+    except psycopg.errors.UniqueViolation as exc:
+        raise DuplicateTarget(url) from exc
     return row["id"]
 
 

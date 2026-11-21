@@ -20,9 +20,15 @@ def test_health_and_auth_match_mode():
 
 
 def test_scan_end_to_end_stores_ranked_findings():
-    t = requests.post(f"{BASE}/api/targets", auth=AUTH, json={"name": "Juice Shop", "url": TARGET, **CTX}, timeout=30)
-    assert t.status_code == 201, t.text
-    sid = requests.post(f"{BASE}/api/targets/{t.json()['id']}/scan", auth=AUTH, timeout=30).json()["scan_id"]
+    existing = next((x for x in requests.get(f"{BASE}/api/targets", auth=AUTH, timeout=30).json()
+                     if x["url"] == TARGET), None)  # reuse the target if an earlier test created it
+    if existing:
+        tid = existing["id"]
+    else:
+        t = requests.post(f"{BASE}/api/targets", auth=AUTH, json={"name": "Juice Shop", "url": TARGET, **CTX}, timeout=30)
+        assert t.status_code == 201, t.text
+        tid = t.json()["id"]
+    sid = requests.post(f"{BASE}/api/targets/{tid}/scan", auth=AUTH, timeout=30).json()["scan_id"]
     deadline = time.time() + 3600
     while time.time() < deadline:
         s = requests.get(f"{BASE}/api/scans/{sid}", auth=AUTH, timeout=30).json()

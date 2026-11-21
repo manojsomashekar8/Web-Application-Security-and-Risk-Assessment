@@ -41,7 +41,10 @@ def create_target(body: dict):
     errors = service.validate_target(body.get("name", ""), body.get("url", ""), ctx)
     if errors:
         raise HTTPException(422, errors)
-    return {"id": service.create_target(body["name"], body["url"], ctx)}
+    try:
+        return {"id": service.create_target(body["name"], body["url"], ctx)}
+    except service.DuplicateTarget:
+        raise HTTPException(409, f"a target for {body['url']} already exists")
 
 
 @app.get("/api/health", dependencies=[Depends(require_auth)])
