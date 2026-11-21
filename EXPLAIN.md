@@ -90,6 +90,10 @@ you click "Start scan"
 
 Only one scan runs at a time. A second request waits in a queue, because ZAP uses about 10 GB of memory and can only handle one scan well.
 
+Each scan also stores its **stage timings** (spider, AJAX spider, passive wait, active scan), its **raw alerts**, and its **top-10 overlap** between the framework ranking and the CVSS-only ranking. Storing the raw alerts is what makes a **re-score** possible: the Re-score button recomputes every finding from those stored alerts, using the target's current business context, and starts no new scan.
+
+The timed Juice Shop run (scan 2, current code) took 15 minutes 30 seconds: 20 s spider, 145 s AJAX spider, and 755 s active scan. Details are in [docs/RESULTS.md](docs/RESULTS.md).
+
 ### Why the scan uses several spiders
 
 The first run on Juice Shop found 95 pages but no API endpoints. The normal spider cannot see pages that load through JavaScript. The AJAX spider drives a headless browser to find those pages. Without it, the active scan never tests the API, so SQL injection and XSS in the API are missed.
@@ -142,6 +146,10 @@ Some findings have a CVE number (a public ID for a known problem). For those, we
 
 Only findings with an explicit CVE mapping in `configs/cve_map.json` get these values. ZAP's web findings usually have no CVE, so most findings have empty CVSS, EPSS and KEV fields. **Missing data is shown as "n/a", never as 0.** We do not guess CVE numbers.
 
+**Provenance.** Each of the three values records where it came from: the feed name, the file, the snapshot date (from `data/feeds/manifest.json`), and a status (`ok`, `no_cve`, `not_in_feed` or `unavailable`). This is stored with the finding, so any number can be traced back to its source.
+
+**Resilience.** If a feed file is missing, unreadable, or has a wrong header, the pipeline logs a warning, sets those values to n/a, and carries on. The scan still finishes. Tests cover each feed in each failure case (decision D32).
+
 ### Step D: Score (`src/scoring/score.py`)
 
 Each finding gets three numbers:
@@ -193,6 +201,8 @@ Findings are ranked by four methods, each from its own score:
 
 Ties are broken by plugin ID and then URL, so repeated runs give the same order. A test checks that changing the input order does not change the result.
 
+**Scan-level number.** For each scan we also compute the **top-10 overlap**: how many of the framework's top 10 findings are also in the CVSS-only top 10, out of 10. The timed Juice Shop run scored 0.8.
+
 **Why are the rankings often the same?** In one scan, most findings have the same ZAP risk and confidence. When the inputs are equal, every method gives an equal score, so they produce the same order. The methods only differ when the findings differ in CVE data, KEV status or ZAP risk. Tests in `tests/test_ranking_methods.py` show both cases.
 
 ---
@@ -209,12 +219,19 @@ A score that looks sensible is not evidence. The project runs five experiments (
 | 4. Weights | Does the weighted-sum ranking stay stable when weights change inside documented ranges? |
 | 5. Ablation | What happens when each factor is removed in turn? |
 
+Every experiment writes a JSON file and a CSV file (for spreadsheets) to `results/experiments/`. Experiment 6 compares raw alerts with unique findings. Experiment 7 gives detection per vulnerability category.
+
+**Coverage rule.** A validation run is only judged if it reached at least 10 distinct URLs (`configs/validation.json`). A run below that threshold, such as WebGoat with 2 pages, shows "Coverage too low" instead of precision and recall. It is never shown as 0 (decisions D42 and D43).
+
+**Precision and recall** on the validation dashboard: precision = matching alerts / total alerts; recall = known vulnerability types detected / known types. Precision is low because most ZAP alerts are informational (missing headers, cookie flags) and do not match a known vulnerability type.
+
 Results are summarised in [docs/RESULTS.md](docs/RESULTS.md). Current limits:
 
 - One run per target. No repeat runs, so no variance estimate.
 - WebGoat is a single-page app. The scanner reached only 2 of its pages, so its numbers say nothing about detection.
 - Most ZAP web findings have no CVE, so the framework's advantage over the baselines comes mostly from context, not from CVE data.
 - Precision is low because most alerts are minor (missing headers and similar). That is expected for a web scanner.
+- Each target was scanned once for validation. Re-runs would show how much results vary.
 
 ---
 
@@ -228,6 +245,8 @@ The frontend is in `frontend/`. It is a single-page app with four screens:
 | Add target | `/targets/new` | Pick a website from the allowlist and rate its business context |
 | Target | `/targets/:id` | See the context, start a scan, open the latest results |
 | Scan results | `/scans/:id` | See summary cards, filter findings, expand a row to read why it scored that way |
+
+A **system status panel** on the targets page shows whether Postgres, ZAP and the feed snapshot are healthy. A feed snapshot older than 30 days shows as stale (decision D31).
 
 The results screen shows:
 
@@ -247,6 +266,10 @@ The frontend is built into a small nginx container. nginx serves the app and for
 
 Dashboards are **automatic**. Grafana loads them from `grafana/provisioning/` on startup, so you never create them by hand. The same goes for the data source and the alert rule.
 
+**Target variable.** The overview dashboard has a `target` filter at the top. Choose one target or all of them. The new panels follow it: findings by framework band, scan duration per stage, the count of findings with n/a enrichment, and the top-10 overlap.
+
+**Validation dashboard.** It shows the latest run for each target by default, with one row per target. A run-date variable selects an older run. Its panels are the results table (with precision and recall, or "Coverage too low"), recall per vulnerability category, and recall per target. A note panel explains how precision is computed.
+
 | Dashboard | Panels |
 |---|---|
 | WASRA overview | Scans by status, findings by ZAP risk, average framework risk per target, scans over time (table), findings by classification, raw alerts vs unique findings |
@@ -265,10 +288,11 @@ Grafana connects to PostgreSQL with a **read-only role** (`grafana_ro`). It cann
 
 - **Allowlist.** A scan only starts for a URL listed in `docs/TARGETS.md`. The server checks this, not the browser.
 - **Local only.** Every port is bound to `127.0.0.1`.
-- **Login.** The web app and API use HTTP Basic auth with credentials from `.env`. The comparison uses a constant-time check.
 - **Secrets.** `.env` is not committed to git. `make env` generates random passwords.
 - **Practice-site logins.** The default accounts of the practice apps are only used inside the Docker network.
 - **Read-only dashboards.** Grafana cannot write.
+- **AUTH_MODE.** `none` (the default) skips the login. It is only safe because `make up` refuses to start if any published port is bound to something other than 127.0.0.1 (`scripts/check_bindings.py`, tested). `basic` adds a login: the React app shows a login form, keeps the credentials in memory only, and sends them with each request. The server compares them in constant time.
+- **Allowlist in both modes.** A URL that is not in `docs/TARGETS.md` is rejected whether or not a login is required.
 
 ---
 
@@ -298,10 +322,10 @@ Then open:
 | Limit | What would fix it |
 |---|---|
 | WebGoat barely scanned (single-page app) | Seed the scanner from API endpoints, or report WebGoat as a coverage limit |
-| Juice Shop scan time not measured | One timed run with each stage recorded |
-| One run per target | Repeated runs with variance reported |
+| Juice Shop scan time measured once (15.5 min) | Repeat the timed run to see variation |
+| One validation run per target | Repeated runs with variance reported |
 | Most findings lack CVEs | A reviewed CVE mapping for more finding types |
-| Commits not pushed from this machine | Push with an account that has write access |
-| Missing docs: `TEST_PLAN.md`, `UI.md`, `LITERATURE.md`, `REPRODUCIBILITY.md` | Write them |
+| Recent commits may not be pushed from this machine | Push with an account that has write access; see docs/OPEN_QUESTIONS.md |
+| Literature list written from memory, not checked online | Verify each source and add DOIs before citing it (docs/LITERATURE.md) |
 
 For the reasoning behind each choice, see [docs/DECISIONS.md](docs/DECISIONS.md). For what is still open, see [docs/OPEN_QUESTIONS.md](docs/OPEN_QUESTIONS.md).
