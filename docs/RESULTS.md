@@ -32,3 +32,21 @@ We ran one scan per website. The results are in `results/raw/`. The tables below
 - Juice Shop was scanned earlier, in a separate run. Its raw results are kept in `results/raw/` for comparison, but they are not in the table above.
 - We have not recorded how long each scan took. The full Juice Shop scan is expected to be slow.
 - The experiments in `results/experiments/` depend on the scans above, so treat them as preliminary.
+
+## Timed Juice Shop scan (scan 2, current code)
+
+Run on 2026-11-21 with the current code, through the normal web API. The timings are also saved in `results/scan2_timings.json`.
+
+| Stage | Duration |
+|---|---|
+| Spider | 20.1 s |
+| AJAX spider | 145.3 s |
+| Passive wait | 0.0 s |
+| Active scan | 754.6 s (12 min 35 s) |
+| **Scanner total** | **920 s (15 min 20 s)** |
+| Wall clock, start to done (includes alert download and scoring) | 929.9 s (15 min 30 s) |
+
+- Raw alerts stored: 1,103. Unique findings after grouping: 493.
+- Top-10 overlap between the framework ranking and the CVSS-only ranking: 0.8.
+- The active scan is almost all of the time. The machine was otherwise idle; load peaked near 70 while ZAP ran.
+- This scan replaces the earlier pre-grouping raw file in `results/raw/juiceshop_alerts.json`. The earlier file is kept as `juiceshop_pre_grouping_alerts.json` for comparison (decision D39).

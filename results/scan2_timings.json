@@ -1,0 +1,16 @@
+{
+    "scan_id": 2,
+    "target": "http://juice-shop:3000",
+    "started_at": "2026-11-21T09:57:11.739324+00:00",
+    "finished_at": "2026-11-21T10:12:41.655905+00:00",
+    "wall_seconds": 929.9,
+    "stage_seconds": {
+        "spider": 20.1,
+        "active_scan": 754.6,
+        "ajax_spider": 145.3,
+        "passive_wait": 0.0
+    },
+    "raw_alerts": 1103,
+    "unique_findings": 493,
+    "top10_overlap": 0.8
+}
