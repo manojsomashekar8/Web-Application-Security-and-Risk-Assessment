@@ -45,6 +45,7 @@ services:
       ZAP_API_KEY: ${ZAP_API_KEY}
       WEB_USER: ${WEB_USER}
       WEB_PASSWORD: ${WEB_PASSWORD}
+      AUTH_MODE: ${AUTH_MODE:-none}
     ports: ["127.0.0.1:8080:8000"]
     volumes: ["./results:/app/results"]
 

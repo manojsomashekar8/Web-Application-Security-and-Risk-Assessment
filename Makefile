@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 PY := .venv/bin/python
+AUTH_MODE := $(or $(shell grep -E '^AUTH_MODE=' .env 2>/dev/null | cut -d= -f2),none)
 DBURL = postgresql://wasra:$$(grep ^POSTGRES_PASSWORD= .env | cut -d= -f2)@127.0.0.1:5432/wasra
 
 help:  ## list targets
@@ -15,6 +16,7 @@ env:  ## create .env with random secrets (first setup)
 	@scripts/gen_env.sh
 
 up: env  ## start the stack (bound to 127.0.0.1) and wait until the endpoints answer
+	docker compose config --format json | $(PY) scripts/check_bindings.py $(AUTH_MODE)
 	docker compose up -d --build
 	timeout 900 bash -c 'until curl -sf -o /dev/null http://127.0.0.1:8080/healthz; do sleep 5; done'
 	timeout 900 bash -c 'until curl -sf -o /dev/null http://127.0.0.1:3001/api/health; do sleep 5; done'
