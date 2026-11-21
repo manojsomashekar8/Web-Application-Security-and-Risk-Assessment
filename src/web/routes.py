@@ -48,7 +48,10 @@ async def create(request: Request):
     if errors:
         return templates.TemplateResponse(request, "new_target.html", {
             "levels": LEVELS, "help": CONTEXT_HELP, "errors": errors, "form": form}, status_code=422)
-    tid = service.create_target(form["name"], form["url"], ctx)
+    try:
+        tid = service.create_target(form["name"], form["url"], ctx)
+    except service.DuplicateTarget:  # the URL already has a target: open it instead of failing
+        tid = service.target_id_for_url(form["url"])
     return RedirectResponse(f"/targets/{tid}", status_code=303)
 
 

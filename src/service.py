@@ -41,6 +41,12 @@ class DuplicateTarget(Exception):
     """A target with this URL already exists (targets.url is unique)."""
 
 
+def target_id_for_url(url: str) -> int | None:
+    with db.connect() as conn:
+        row = conn.execute("SELECT id FROM targets WHERE url=%s", (url,)).fetchone()
+    return row["id"] if row else None
+
+
 def create_target(name: str, url: str, ctx: dict) -> int:
     import psycopg.errors
     try:
