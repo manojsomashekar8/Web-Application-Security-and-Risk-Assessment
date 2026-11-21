@@ -48,3 +48,31 @@ class WasraCollector(Collector):
                 raw.add_metric([r["url"], "raw"], r["raw"])
                 raw.add_metric([r["url"], "unique"], r["uniq"])
             yield raw
+            # Latest finished scan per target: used for the per-target panels below.
+            latest = ("WITH latest AS (SELECT DISTINCT ON (s.target_id) s.id, s.target_id, s.stage_seconds, "
+                      "s.top10_overlap FROM scans s WHERE s.status='done' ORDER BY s.target_id, s.id DESC) ")
+            bands = GaugeMetricFamily("wasra_findings_by_band", "Findings per framework band (latest scan)",
+                                      labels=["target", "band"])
+            for r in conn.execute(latest + "SELECT t.url, CASE WHEN f.risk >= 60 THEN 'High' "
+                                  "WHEN f.risk >= 30 THEN 'Medium' ELSE 'Low' END AS band, count(*) AS n "
+                                  "FROM findings f JOIN latest l ON l.id = f.scan_id "
+                                  "JOIN targets t ON t.id = l.target_id GROUP BY 1, 2"):
+                bands.add_metric([r["url"], r["band"]], r["n"])
+            yield bands
+            stages = GaugeMetricFamily("wasra_scan_stage_seconds", "Duration of each scan stage (latest scan)",
+                                       labels=["target", "stage"])
+            overlap = GaugeMetricFamily("wasra_top10_overlap", "Top-10 overlap, framework vs CVSS-only (latest scan)",
+                                        labels=["target"])
+            na = GaugeMetricFamily("wasra_enrichment_na", "Findings with no CVSS (enrichment n/a), latest scan",
+                                   labels=["target"])
+            for r in conn.execute(latest + "SELECT t.url, l.stage_seconds, l.top10_overlap, "
+                                  "(SELECT count(*) FROM findings f WHERE f.scan_id = l.id AND f.enrichment_na) AS na "
+                                  "FROM latest l JOIN targets t ON t.id = l.target_id"):
+                for stage, secs in (r["stage_seconds"] or {}).items():
+                    stages.add_metric([r["url"], stage], secs)
+                if r["top10_overlap"] is not None:
+                    overlap.add_metric([r["url"]], r["top10_overlap"])
+                na.add_metric([r["url"]], r["na"])
+            yield stages
+            yield overlap
+            yield na

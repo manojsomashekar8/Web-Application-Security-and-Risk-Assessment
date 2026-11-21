@@ -53,3 +53,25 @@ def test_dashboard_loads(page):
     page.goto(f"{BASE}{found[0]['url']}")
     page.wait_for_load_state("networkidle", timeout=60_000)
     assert "login" not in page.url
+
+
+REQUIRED_OVERVIEW_PANELS = {
+    "Findings by framework band (latest scan per target)",
+    "Scan duration per stage (seconds)",
+    "Findings with n/a enrichment (no CVSS)",
+    "Top-10 overlap: framework vs CVSS-only",
+}
+
+
+def test_overview_has_target_variable_and_new_panels(page):
+    found = page.request.get(f"{BASE}/api/search?query=WASRA%20overview").json()
+    uid = next(d["uid"] for d in found if d["title"] == "WASRA overview")
+    dash = page.request.get(f"{BASE}/api/dashboards/uid/{uid}").json()["dashboard"]
+    assert any(v["name"] == "target" for v in dash["templating"]["list"])
+    titles = {p["title"] for p in dash["panels"]}
+    assert REQUIRED_OVERVIEW_PANELS <= titles, REQUIRED_OVERVIEW_PANELS - titles
+
+
+def test_every_provisioned_dashboard_is_present(page):
+    titles = {d["title"] for d in page.request.get(f"{BASE}/api/search?type=dash-db").json()}
+    assert {"WASRA overview", "WASRA ranking stability", "WASRA validation"} <= titles
