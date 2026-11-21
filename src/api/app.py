@@ -44,6 +44,11 @@ def create_target(body: dict):
     return {"id": service.create_target(body["name"], body["url"], ctx)}
 
 
+@app.get("/api/allowed-targets", dependencies=[Depends(require_auth)])
+def allowed_targets():
+    return sorted(service.allowed_targets())
+
+
 @app.get("/api/targets/{tid}/latest-scan", dependencies=[Depends(require_auth)])
 def latest_scan(tid: int):
     s = service.latest_scan(tid)
