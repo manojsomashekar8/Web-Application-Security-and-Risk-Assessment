@@ -1,11 +1,142 @@
 {
-  "title": "WASRA validation", "uid": "wasra-validation", "schemaVersion": 39, "time": {"from": "now-365d", "to": "now"},
+  "title": "WASRA validation",
+  "uid": "wasra-validation",
+  "schemaVersion": 39,
+  "time": {
+    "from": "now-365d",
+    "to": "now"
+  },
   "panels": [
-    {"id": 1, "type": "table", "title": "Detection precision and recall per target", "gridPos": {"x": 0, "y": 0, "w": 24, "h": 10},
-     "datasource": {"uid": "wasra-db"}, "targets": [{"refId": "A", "format": "table", "rawQuery": true, "editorMode": "code",
-     "rawSql": "SELECT target, known_vulns, detected, true_pos, round(precision::numeric, 3) AS precision, round(recall::numeric, 3) AS recall, run_date FROM validation_results ORDER BY run_date DESC, target"}]},
-    {"id": 2, "type": "barchart", "title": "Recall by target", "gridPos": {"x": 0, "y": 10, "w": 24, "h": 8},
-     "datasource": {"uid": "wasra-db"}, "targets": [{"refId": "A", "format": "table", "rawQuery": true, "editorMode": "code",
-     "rawSql": "SELECT target, recall FROM validation_results WHERE run_date = (SELECT max(run_date) FROM validation_results)"}]}
-  ]
+    {
+      "id": 1,
+      "type": "table",
+      "title": "Validation results: one row per target (latest run by default)",
+      "description": "Precision = Matching alerts / Total alerts. A ZAP alert matches when its CWE is in the app's known vulnerability list (configs/ground_truth.json). Recall = Known types detected / Known types. 'Coverage too low' means fewer than the minimum number of pages was reached (configs/validation.json).",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 9
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "wasra-db"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "rawSql": "SELECT r.target AS \"Target\", r.known_vulns AS \"Known types\", r.detected AS \"Detected types\", r.matching_alerts AS \"Matching alerts\", r.total_alerts AS \"Total alerts\", CASE WHEN r.coverage_ok THEN round(r.precision::numeric, 3)::text ELSE 'Coverage too low' END AS \"Precision\", CASE WHEN r.coverage_ok THEN round(r.recall::numeric, 3)::text ELSE 'Coverage too low' END AS \"Recall\", r.run_time AS \"Run time\" FROM validation_results r WHERE (('$run_date' = 'latest' AND r.id IN (SELECT DISTINCT ON (target) id FROM validation_results ORDER BY target, run_date DESC, id DESC)) OR ('$run_date' <> 'latest' AND r.run_date::text = '$run_date')) ORDER BY r.target"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 2,
+      "type": "text",
+      "title": "How to read these numbers",
+      "description": "",
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 24,
+        "h": 5
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "wasra-db"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "markdown",
+          "rawQuery": true,
+          "editorMode": "code",
+          "rawSql": ""
+        }
+      ],
+      "options": {
+        "mode": "markdown",
+        "content": "**Precision is low because most ZAP alerts are informational, not because the scanner is wrong.** Most ZAP alerts are informational: missing security headers, cookie flags, version leaks. They are real observations but do not map to a known vulnerability type, so they count against precision. Recall is the number that matters for detection.\n\n**Per-category recall** is 1 (detected) or 0 (missed) per category, because each app lists one known class per category. A blank or 'Coverage too low' value means the run reached too few pages to judge; it is never shown as 0.\n\n**Run date** selects an older run. 'latest' shows the most recent run for each target."
+      }
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "Recall by category (latest run per target)",
+      "description": "",
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 24,
+        "h": 12
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "wasra-db"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "rawSql": "SELECT c.target AS \"Target\", c.category AS \"Category\", CASE WHEN c.detected IS NULL THEN 'Coverage too low' WHEN c.detected THEN 'Detected' ELSE 'Missed' END AS \"Recall per category\" FROM validation_categories c WHERE (('$run_date' = 'latest' AND (c.target, c.run_date) IN (SELECT DISTINCT ON (target) target, run_date FROM validation_results ORDER BY target, run_date DESC, id DESC)) OR ('$run_date' <> 'latest' AND c.run_date::text = '$run_date')) ORDER BY c.target, c.category"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 4,
+      "type": "barchart",
+      "title": "Recall by target (blank = coverage too low)",
+      "description": "",
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "wasra-db"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "rawSql": "SELECT r.target AS target, CASE WHEN r.coverage_ok THEN r.recall ELSE NULL END AS recall FROM validation_results r WHERE (('$run_date' = 'latest' AND r.id IN (SELECT DISTINCT ON (target) id FROM validation_results ORDER BY target, run_date DESC, id DESC)) OR ('$run_date' <> 'latest' AND r.run_date::text = '$run_date')) ORDER BY r.target"
+        }
+      ],
+      "options": {}
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "run_date",
+        "label": "Run date",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "wasra-db"
+        },
+        "refresh": 1,
+        "includeAll": false,
+        "multi": false,
+        "query": "SELECT v AS __value, v AS __text FROM (SELECT 'latest' AS v, 0 AS o UNION ALL SELECT DISTINCT run_date::text AS v, 1 AS o FROM validation_results) s ORDER BY o, v DESC",
+        "definition": "latest per target, then each run date",
+        "current": {
+          "selected": true,
+          "text": "latest",
+          "value": "latest"
+        },
+        "hide": 0
+      }
+    ]
+  }
 }

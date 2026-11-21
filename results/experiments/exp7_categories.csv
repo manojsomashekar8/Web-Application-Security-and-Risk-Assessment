@@ -1,0 +1,29 @@
+target,category,detected
+juiceshop,SQL injection,True
+juiceshop,Cross-site scripting,False
+juiceshop,Broken access control,False
+juiceshop,Path traversal,False
+juiceshop,Sensitive data exposure,False
+juiceshop,Security misconfiguration,True
+dvwa,SQL injection,True
+dvwa,Cross-site scripting,False
+dvwa,OS command injection,False
+dvwa,File inclusion,False
+dvwa,CSRF,True
+dvwa,Unrestricted file upload,False
+dvwa,Broken authentication,False
+webgoat,SQL injection,
+webgoat,Cross-site scripting,
+webgoat,Broken access control,
+webgoat,Path traversal,
+webgoat,XML external entity,
+webgoat,Insecure deserialization,
+webgoat,Cross-site request forgery,
+bwapp,SQL injection,False
+bwapp,Cross-site scripting,False
+bwapp,OS command injection,False
+bwapp,File inclusion,False
+bwapp,Path traversal,False
+bwapp,CSRF,True
+bwapp,XML external entity,False
+bwapp,HTTP response splitting,False

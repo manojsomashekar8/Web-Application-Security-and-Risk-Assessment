@@ -45,19 +45,39 @@ def ranks(rows: list[dict], key: str) -> dict:
     return {r["id"] + "|" + r["url"]: r[key] for r in rows}
 
 
+VALIDATION = json.loads((ROOT / "configs" / "validation.json").read_text())
+
+
+def pages_reached(alerts: list[dict]) -> int:
+    """Distinct URLs that appear in the alerts. A lower bound on pages the scanner reached."""
+    return len({a["url"] for a in alerts})
+
+
 def detection(name: str, alerts: list[dict]) -> dict:
     classes = GT[TARGETS[name][1]]
     cwe_to_class = {c: cls for cls, cwes in classes.items() for c in cwes}
     norm = normalize_all(alerts)
     tp = [a for a in norm if a["cwe"] in cwe_to_class]
     detected = {cwe_to_class[a["cwe"]] for a in tp}
+    pages = pages_reached(alerts)
+    ok = pages >= VALIDATION["min_pages"]
+    # precision = matching alerts / total alerts (the definition shown under the dashboard panel)
     return {
-        "target": name, "alerts": len(norm), "true_pos_alerts": len(tp),
+        "target": name, "pages_reached": pages, "coverage_ok": ok,
+        "alerts": len(norm), "total_alerts": len(norm), "matching_alerts": len(tp), "true_pos_alerts": len(tp),
         "known_classes": len(classes), "detected_classes": len(detected),
         "missed_classes": sorted(set(classes) - detected),
-        "precision": round(len(tp) / len(norm), 4) if norm else 0.0,
-        "recall": round(len(detected) / len(classes), 4),
+        "precision": round(len(tp) / len(norm), 4) if (norm and ok) else None,
+        "recall": round(len(detected) / len(classes), 4) if ok else None,
     }
+
+
+def categories(name: str, alerts: list[dict]) -> list[dict]:
+    """Per vulnerability category: detected yes/no. None (not 0) when coverage is too low."""
+    classes = GT[TARGETS[name][1]]
+    found = {c for a in normalize_all(alerts) for cls, cwes in classes.items() if a["cwe"] in cwes for c in [cls]}
+    ok = pages_reached(alerts) >= VALIDATION["min_pages"]
+    return [{"target": name, "category": cls, "detected": (cls in found) if ok else None} for cls in classes]
 
 
 def run_pipeline_for(alerts, ctx=None, feeds=None, weights=None):
@@ -213,16 +233,25 @@ def main() -> None:
             write(n, data, inp)
     write("exp1_detection", detect, [RAW / f"{TARGETS[n][0]}_alerts.json" for n in detect])
     write("exp6_dedup", dedup, [RAW / f"{TARGETS[n][0]}_alerts.json" for n in dedup])
+    cats = {n: categories(n, load_alerts(n)) for n in detect}
+    write("exp7_categories", cats, [RAW / f"{TARGETS[n][0]}_alerts.json" for n in cats])
     if args.store:
         from src import db
         with db.connect() as conn:
             conn.execute("DELETE FROM validation_results WHERE run_date = CURRENT_DATE")
+            conn.execute("DELETE FROM validation_categories WHERE run_date = CURRENT_DATE")
             for d in detect.values():
                 conn.execute(
-                    "INSERT INTO validation_results (target, known_vulns, detected, true_pos, precision, recall) "
-                    "VALUES (%s,%s,%s,%s,%s,%s)",
+                    "INSERT INTO validation_results (target, known_vulns, detected, true_pos, precision, recall, "
+                    "pages_reached, total_alerts, matching_alerts, coverage_ok) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                     (d["target"], d["known_classes"], d["detected_classes"], d["true_pos_alerts"],
-                     d["precision"], d["recall"]))
+                     d["precision"], d["recall"], d["pages_reached"], d["total_alerts"], d["matching_alerts"],
+                     d["coverage_ok"]))
+            for rows in cats.values():
+                for c in rows:
+                    conn.execute("INSERT INTO validation_categories (target, category, detected) VALUES (%s,%s,%s)",
+                                 (c["target"], c["category"], c["detected"]))
     print(json.dumps({"detection": detect}, indent=2))
 
 

@@ -1,0 +1,4 @@
+{
+  "min_pages": 10,
+  "_comment": "A validation run that reached fewer distinct URLs than min_pages is reported as 'Coverage too low' and gets no precision or recall. Pages reached = distinct URLs that appear in the ZAP alerts (a lower bound on pages the spider found)."
+}
