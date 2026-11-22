@@ -28,6 +28,7 @@ def test_full_flow():
         page.click("text=Start scan")
         expect(page.locator("#status")).to_have_text("done", timeout=3_600_000)
         page.click("text=View ranked findings")
+        page.wait_for_load_state("networkidle")  # the row toggle script must be attached before the click
         page.locator("tr.row").first.click()
         expect(page.locator("tr[id^=d]:not([hidden])")).to_contain_text(re.compile(r"Risk [0-9.]+ \((High|Medium|Low)\)"))
         href = page.get_attribute("text=JSON report", "href")
