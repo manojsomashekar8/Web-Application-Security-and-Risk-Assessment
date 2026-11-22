@@ -198,3 +198,55 @@ def scan_html_for(scan_id: int) -> str | None:
     if s is None:
         return None
     return scan_html(scan_id, s["url"], findings_for_scan(scan_id))
+
+
+class DuplicateImport(Exception):
+    """This exact scan was already imported."""
+
+
+def export_scan(scan_id: int) -> dict | None:
+    from src import importexport
+    with db.connect() as conn:
+        row = conn.execute("SELECT s.*, t.name, t.url, t.criticality, t.data_sensitivity, t.internet_exposure, "
+                           "t.business_impact FROM scans s JOIN targets t ON t.id=s.target_id WHERE s.id=%s",
+                           (scan_id,)).fetchone()
+    if row is None:
+        return None
+    if row["status"] != "done":
+        raise ValueError("only finished scans can be exported")
+    if row["raw_alerts"] is None:
+        raise ValueError("this scan has no stored raw alerts, so it cannot be exported")
+    n = len(findings_for_scan(scan_id))
+    return importexport.export_document(row, row, n)
+
+
+def import_scan(raw: bytes) -> int:
+    from src import importexport
+    from src.scanprofile import resolve
+    data = importexport.parse(raw)
+    v = importexport.validate(data)
+    t = v["target"]
+    errors = validate_target(t["name"], t["url"], {k: t[k] for k in CONTEXT_FIELDS})
+    if errors:  # the allowlist still applies to imported targets
+        raise importexport.ImportError_("; ".join(errors))
+    digest = importexport.content_hash(data)
+    settings = resolve(v["profile"], v["settings"] if v["profile"] == "custom" else None)
+    ctx = {k: t[k] for k in CONTEXT_FIELDS}
+    rows, overlap = scan_rows(v["alerts"], ctx)  # recomputed from the raw alerts; stored scores are ignored
+    with db.connect() as conn:
+        if conn.execute("SELECT 1 FROM scans WHERE import_hash=%s", (digest,)).fetchone():
+            raise DuplicateImport(digest[:12])
+        target = conn.execute("SELECT id FROM targets WHERE url=%s", (t["url"],)).fetchone()
+        tid = target["id"] if target else conn.execute(
+            "INSERT INTO targets (name, url, criticality, data_sensitivity, internet_exposure, business_impact) "
+            "VALUES (%s,%s,%s,%s,%s,%s) RETURNING id",
+            (t["name"], t["url"], *(t[k] for k in CONTEXT_FIELDS))).fetchone()["id"]
+        with conn.transaction():
+            sid = conn.execute(
+                "INSERT INTO scans (target_id, status, started_at, finished_at, settings, stage_seconds, raw_alerts, "
+                "top10_overlap, imported_from, imported_at, import_hash) "
+                "VALUES (%s,'done',now(),now(),%s::jsonb,%s::jsonb,%s::jsonb,%s,%s,now(),%s) RETURNING id",
+                (tid, json.dumps(settings), json.dumps(v["stage_seconds"]), json.dumps(v["alerts"]), overlap,
+                 f"export {data['exported_at']} (format {data['format_version']})", digest)).fetchone()["id"]
+            _store_findings(conn, sid, rows, ctx)
+    return sid

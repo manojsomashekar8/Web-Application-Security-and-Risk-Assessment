@@ -1,7 +1,8 @@
 """FastAPI app: web UI pages, JSON API, Prometheus /metrics."""
+import json
 import pathlib
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from prometheus_client import CONTENT_TYPE_LATEST, CollectorRegistry, generate_latest, REGISTRY
 from fastapi.responses import Response
@@ -131,6 +132,32 @@ def scan_report_html(sid: int):
 def scan_findings_csv(sid: int):
     return Response(service.findings_csv(sid), media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f"attachment; filename=scan-{sid}-findings.csv"})
+
+
+@app.get("/api/scans/{sid}/export.json", dependencies=[Depends(require_auth)])
+def scan_export(sid: int):
+    try:
+        doc = service.export_scan(sid)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
+    if doc is None:
+        raise HTTPException(404, "no such scan")
+    return Response(json.dumps(doc, indent=1), media_type="application/json",
+                    headers={"Content-Disposition": f"attachment; filename=wasra-scan-{sid}.json"})
+
+
+@app.post("/api/import", dependencies=[Depends(require_auth)], status_code=201)
+async def scan_import(request: Request):
+    from src import importexport
+    raw = await request.body()
+    if len(raw) > importexport.MAX_BYTES:
+        raise HTTPException(413, "file is too large")
+    try:
+        return {"scan_id": service.import_scan(raw)}
+    except importexport.ImportError_ as exc:
+        raise HTTPException(422, str(exc))
+    except service.DuplicateImport as exc:
+        raise HTTPException(409, f"this scan was already imported ({exc})")
 
 
 @app.get("/api/scans/{sid}/report.json", dependencies=[Depends(require_auth)])
