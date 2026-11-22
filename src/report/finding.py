@@ -77,3 +77,21 @@ def finding_detail(finding: dict, scan: dict, target_url: str, raw_alerts: list[
 
 def finding_html(detail: dict) -> str:
     return TEMPLATE.render(d=detail)
+
+
+SCAN_TEMPLATE = _env.from_string("""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Scan {{ sid }} report</title>
+<style>body{font-family:system-ui,sans-serif;max-width:1000px;margin:2rem auto;padding:0 1rem;color:#1b2430}
+table{border-collapse:collapse;width:100%}td,th{border:1px solid #dfe3ea;padding:.3rem .5rem;text-align:left;vertical-align:top}</style>
+</head><body>
+<h1>Scan #{{ sid }}: {{ target }}</h1>
+<p>{{ rows|length }} findings. Each finding has its own report at /api/findings/&lt;id&gt;/report.html.</p>
+<table><tr><th>Rank</th><th>Finding</th><th>Class</th><th>Score</th><th>ZAP risk</th><th>URL</th><th>Alerts merged</th><th>Report</th></tr>
+{% for r in rows %}<tr><td>{{ r.rank_risk }}</td><td>{{ r.type }}</td><td>{{ r.classification }}</td>
+<td>{{ '%.1f'|format(r.risk) }}</td><td>{{ r.zap_risk }}</td><td>{{ r.url }}</td><td>{{ r.occurrences }}</td>
+<td><a href="/api/findings/{{ r.id }}/report.html">HTML</a> · <a href="/api/findings/{{ r.id }}/report.json">JSON</a></td></tr>
+{% endfor %}</table></body></html>""")
+
+
+def scan_html(scan_id: int, target: str, rows: list[dict]) -> str:
+    return SCAN_TEMPLATE.render(sid=scan_id, target=target, rows=rows)

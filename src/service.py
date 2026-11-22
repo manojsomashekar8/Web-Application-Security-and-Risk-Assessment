@@ -188,3 +188,13 @@ def findings_csv(scan_id: int) -> str:
             row.append(v)
         w.writerow(row)
     return buf.getvalue()
+
+
+def scan_html_for(scan_id: int) -> str | None:
+    from src.report.finding import scan_html
+    with db.connect() as conn:
+        s = conn.execute("SELECT s.id, t.url FROM scans s JOIN targets t ON t.id=s.target_id WHERE s.id=%s",
+                         (scan_id,)).fetchone()
+    if s is None:
+        return None
+    return scan_html(scan_id, s["url"], findings_for_scan(scan_id))

@@ -82,3 +82,6 @@ tr.detail p { margin: 0.2rem 0 0.6rem; line-height: 1.5; }
 .grid-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.8rem; }
 .grid-form label { display: grid; gap: 0.25rem; font-weight: 600; }
 .grid-form textarea { min-height: 4rem; font: inherit; padding: 0.4rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--text); }
+.linkbtn { background: none; border: 0; color: var(--accent); cursor: pointer; font: inherit; padding: 0; }

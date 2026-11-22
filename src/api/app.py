@@ -119,6 +119,14 @@ def finding_report_html(fid: int):
     return Response(finding_html(d), media_type="text/html; charset=utf-8")
 
 
+@app.get("/api/scans/{sid}/report.html", dependencies=[Depends(require_auth)])
+def scan_report_html(sid: int):
+    html = service.scan_html_for(sid)
+    if html is None:
+        raise HTTPException(404, "no such scan")
+    return Response(html, media_type="text/html; charset=utf-8")
+
+
 @app.get("/api/scans/{sid}/findings.csv", dependencies=[Depends(require_auth)])
 def scan_findings_csv(sid: int):
     return Response(service.findings_csv(sid), media_type="text/csv; charset=utf-8",

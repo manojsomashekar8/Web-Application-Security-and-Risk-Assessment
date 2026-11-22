@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { api, band } from "../api.js";
+import { api, band, download } from "../api.js";
 import { BandBadge, ClassBadge, StatusBadge, Value, naTitle } from "../components.jsx";
 
 const CLASSES = ["vulnerability", "potential", "informational", "excluded"];
@@ -14,6 +14,7 @@ export default function Findings() {
   const [bandFilter, setBandFilter] = useState("all");
   const [open, setOpen] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [sort, setSort] = useState({ key: "risk", dir: "desc" });
 
   // Recompute from the stored raw alerts with the target's current context. No new scan is started.
   async function rescore() {
@@ -54,9 +55,29 @@ export default function Findings() {
     };
   }, [rows]);
 
-  const shown = useMemo(() => (rows || []).filter((r) =>
-    (cls === "all" || r.classification === cls) && (bandFilter === "all" || band(r.risk) === bandFilter)
-  ), [rows, cls, bandFilter]);
+  const shown = useMemo(() => {
+    const kept = (rows || []).filter((r) =>
+      (cls === "all" || r.classification === cls) && (bandFilter === "all" || band(r.risk) === bandFilter));
+    // Ties keep the stored deterministic order (rank_risk ascending), so the sort is stable across reloads.
+    const value = {
+      rank: (r) => r.rank_risk, finding: (r) => r.type, class: (r) => r.classification, risk: (r) => r.risk,
+      band: (r) => r.risk, zap_risk: (r) => ["Informational", "Low", "Medium", "High"].indexOf(r.zap_risk),
+      confidence: (r) => ["False Positive", "Low", "Medium", "High"].indexOf(r.zap_confidence),
+      cvss: (r) => r.cvss, epss: (r) => r.epss, kev: (r) => (r.kev === null ? -1 : r.kev ? 1 : 0),
+      count: (r) => r.occurrences,
+    }[sort.key];
+    const dir = sort.dir === "asc" ? 1 : -1;
+    return kept.sort((a, b) => {
+      const x = value(a), y = value(b);
+      const xn = x === null || x === undefined, yn = y === null || y === undefined;
+      if (xn !== yn) return xn ? 1 : -1; // n/a always sorts last
+      if (x !== y) return (x < y ? -1 : 1) * dir;
+      return a.rank_risk - b.rank_risk;
+    });
+  }, [rows, cls, bandFilter, sort]);
+
+  const sortBy = (key) => setSort((s) => ({ key, dir: s.key === key && s.dir === "desc" ? "asc" : "desc" }));
+  const arrow = (key) => (sort.key === key ? (sort.dir === "desc" ? " ▼" : " ▲") : "");
 
   if (error) return <p className="error">{error}</p>;
   if (!scan) return <p className="muted">Loading scan...</p>;
@@ -78,9 +99,11 @@ export default function Findings() {
     <section>
       <div className="row between">
         <h1>Scan #{id} results</h1>
-        <div className="row">
+        <div className="row wrap">
           <button className="button ghost" onClick={rescore} disabled={busy}>{busy ? "Re-scoring..." : "Re-score"}</button>
-          <a className="button ghost" href={`/api/scans/${id}/report.json`}>Download JSON report</a>
+          <button className="button ghost" onClick={() => download(`/scans/${id}/report.html`, `scan-${id}.html`).catch((e) => setError(e.message))}>Full report (HTML)</button>
+          <button className="button ghost" onClick={() => download(`/scans/${id}/report.json`, `scan-${id}.json`).catch((e) => setError(e.message))}>Full report (JSON)</button>
+          <button className="button ghost" onClick={() => download(`/scans/${id}/findings.csv`, `scan-${id}-findings.csv`).catch((e) => setError(e.message))}>Findings (CSV)</button>
         </div>
       </div>
 
@@ -125,15 +148,16 @@ export default function Findings() {
         <table>
           <thead>
             <tr>
-              <th>Rank</th><th>Finding</th><th>Class</th><th>Risk</th><th>Band</th>
-              <th>ZAP risk</th><th>Confidence</th><th>CVSS (from CVE)</th><th>EPSS (from CVE)</th><th>KEV (from CVE)</th><th>Count</th>
+              <th className="sortable" onClick={() => sortBy("rank")}>Rank{arrow("rank")}</th> <th className="sortable" onClick={() => sortBy("finding")}>Finding{arrow("finding")}</th> <th className="sortable" onClick={() => sortBy("class")}>Class{arrow("class")}</th> <th className="sortable" onClick={() => sortBy("risk")}>Risk{arrow("risk")}</th> <th className="sortable" onClick={() => sortBy("band")}>Band{arrow("band")}</th> <th className="sortable" onClick={() => sortBy("zap_risk")}>ZAP risk{arrow("zap_risk")}</th> <th className="sortable" onClick={() => sortBy("confidence")}>Confidence{arrow("confidence")}</th> <th className="sortable" onClick={() => sortBy("cvss")}>CVSS (from CVE){arrow("cvss")}</th> <th className="sortable" onClick={() => sortBy("epss")}>EPSS (from CVE){arrow("epss")}</th> <th className="sortable" onClick={() => sortBy("kev")}>KEV (from CVE){arrow("kev")}</th> <th className="sortable" onClick={() => sortBy("count")}>Count{arrow("count")}</th>
+              <th>Report</th>
             </tr>
           </thead>
           <tbody>
             {shown.map((r) => (
-              <FindingRow key={r.id} r={r} isOpen={open === r.id} onToggle={() => setOpen(open === r.id ? null : r.id)} />
+              <FindingRow key={r.id} r={r} isOpen={open === r.id} onToggle={() => setOpen(open === r.id ? null : r.id)}
+                onError={setError} />
             ))}
-            {shown.length === 0 && <tr><td colSpan="11" className="muted">No findings match these filters.</td></tr>}
+            {shown.length === 0 && <tr><td colSpan="12" className="muted">No findings match these filters.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -141,7 +165,7 @@ export default function Findings() {
   );
 }
 
-function FindingRow({ r, isOpen, onToggle }) {
+function FindingRow({ r, isOpen, onToggle, onError }) {
   const factors = typeof r.factors === "string" ? JSON.parse(r.factors) : r.factors;
   return (
     <>
@@ -157,10 +181,15 @@ function FindingRow({ r, isOpen, onToggle }) {
         <td title={naTitle(r.provenance, "epss")}><Value v={r.epss} digits={3} /></td>
         <td title={naTitle(r.provenance, "kev")}>{r.kev === null || r.kev === undefined ? <span className="muted">n/a</span> : r.kev ? "yes" : "no"}</td>
         <td>{r.occurrences}</td>
+        <td onClick={(e) => e.stopPropagation()}>
+          <button className="linkbtn" onClick={() => download(`/findings/${r.id}/report.html`, `finding-${r.id}.html`).catch((e) => onError(e.message))}>HTML</button>
+          {" · "}
+          <button className="linkbtn" onClick={() => download(`/findings/${r.id}/report.json`, `finding-${r.id}.json`).catch((e) => onError(e.message))}>JSON</button>
+        </td>
       </tr>
       {isOpen && (
         <tr className="detail">
-          <td colSpan="11">
+          <td colSpan="12">
             <p><strong>Why this score:</strong> {r.explanation}</p>
             <div className="grid-dl">
               <div className="dl-row"><dt>Severity (S)</dt><dd><Value v={factors.S} /></dd></div>

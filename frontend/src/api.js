@@ -22,6 +22,18 @@ export async function api(path, options = {}) {
   return res.status === 204 ? null : res.json();
 }
 
+// Download a file with the login header, then save it (plain links cannot send the in-memory login).
+export async function download(path, filename) {
+  const res = await fetch(`/api${path}`, { credentials: "same-origin", headers: authHeader ? { Authorization: authHeader } : {} });
+  if (!res.ok) throw new Error(`Download failed (${res.status})`);
+  const url = URL.createObjectURL(await res.blob());
+  const a = Object.assign(document.createElement("a"), { href: url, download: filename });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export async function loadConfig() {
   const res = await fetch("/api/config");
   if (!res.ok) throw new Error(`Cannot read server config (${res.status})`);
