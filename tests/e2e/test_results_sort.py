@@ -3,6 +3,7 @@
 Run with WASRA_E2E=1 after `make up`. Skips if there is no finished scan to look at.
 """
 import os
+import re
 
 import pytest
 
@@ -27,6 +28,6 @@ def test_default_sort_is_risk_descending_and_header_reverses():
         page.wait_for_load_state("networkidle")
         risks = _risks(page)
         assert risks == sorted(risks, reverse=True), "default order is not risk descending"
-        page.locator('th.sortable:text-is("Risk")').first.click()
+        page.locator("th.sortable").filter(has_text=re.compile(r"^Risk")).first.click()  # header text gains an arrow once sorted
         assert _risks(page) == sorted(risks), "second click does not reverse the order"
         b.close()
