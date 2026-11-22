@@ -1,0 +1,16 @@
+{
+    "scan_id": 10,
+    "target": "http://dvwa:80",
+    "profile": "quick",
+    "zap_version": "2.16.1",
+    "status": "done",
+    "started_at": "2026-11-22T09:35:06.876386+00:00",
+    "finished_at": "2026-11-22T09:35:22.146979+00:00",
+    "stage_seconds": {
+        "spider": 5.0,
+        "passive_wait": 0.0
+    },
+    "raw_alerts": 4,
+    "plugin_10003_alerts": 0,
+    "result": "plugin 10003 did not fire on this scan"
+}

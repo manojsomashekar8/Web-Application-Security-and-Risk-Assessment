@@ -1,0 +1,14 @@
+{
+ "active_scan": false,
+ "ajax_spider": false,
+ "alert_threshold": null,
+ "attack_strength": null,
+ "delay_ms": null,
+ "description": "Traditional spider with a short time cap, passive checks only. A few minutes; sends no attacks.",
+ "max_rule_minutes": null,
+ "max_scan_minutes": null,
+ "profile": "quick",
+ "spider": "traditional",
+ "spider_minutes": 2,
+ "threads_per_host": null
+}
