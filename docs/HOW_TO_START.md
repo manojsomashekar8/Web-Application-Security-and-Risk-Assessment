@@ -2,13 +2,23 @@
 
 This guide is for someone who has never run the project before. Follow the steps in order. For the full explanation of how everything works, read [EXPLAIN.md](../EXPLAIN.md).
 
-## What you need
+## The short way (fresh Ubuntu 22.04 or 24.04)
 
-- **Docker** and **Docker Compose**
-- **Python 3.12** and **Node.js 20** (only if you want to change the frontend outside Docker)
-- **About 25 GB of free disk space.** The scanner images are large.
-- **At least 16 GB of RAM.** The scanner uses about 10 GB while it runs.
-- **One scan at a time.** Running two at once slows your computer a lot.
+```
+./install.sh            # checks the system, installs what is missing, creates .env, builds and starts everything
+./install.sh --check    # only report what is missing and the resource check (changes nothing)
+./install.sh --no-start # install and build, but do not start
+```
+
+`install.sh` is safe to run twice. It never overwrites an existing `.env`. It installs Docker from Docker's official apt repository, and it warns if the machine has less RAM (16 GB) or less free disk (25 GB) than recommended.
+
+## What you need (if you do not use install.sh)
+
+- Docker and Docker Compose
+- Python 3.12 and `make` and `git`
+- About 25 GB of free disk space
+- At least 16 GB of RAM. A deep scan of DVWA peaked at 12.8 GB of ZAP memory (see docs/RESULTS.md).
+- One scan at a time. Running two at once slows the computer a lot.
 
 ## Step 1: Create your settings file (first time only)
 
@@ -16,7 +26,7 @@ This guide is for someone who has never run the project before. Follow the steps
 make env
 ```
 
-This creates `.env` with random passwords. Never share it or commit it to git.
+This creates `.env` with random passwords. Never share it or commit it to git. `AUTH_MODE=none` (no login) is the default; set `AUTH_MODE=basic` in `.env` to require a login.
 
 ## Step 2: Start everything
 
@@ -24,20 +34,18 @@ This creates `.env` with random passwords. Never share it or commit it to git.
 make up
 ```
 
-This starts the services in Docker. Database changes (migrations) are applied automatically when the backend starts. The first start takes several minutes because Docker downloads and builds the images.
-
-After it finishes, these addresses work from your own computer:
+`make up` first checks that every published port is bound to 127.0.0.1 when `AUTH_MODE=none`, and refuses to start otherwise. Database migrations are applied when the backend starts.
 
 | What | Address | Login |
 |---|---|---|
-| **React web app (use this one)** | http://127.0.0.1:80 | `WEB_USER` and `WEB_PASSWORD` from `.env` |
-| Original web pages | http://127.0.0.1:8080 | Same as above |
-| Dashboards (Grafana) | http://127.0.0.1:3001 | `admin` and `GRAFANA_ADMIN_PASSWORD` from `.env` |
-| Scanner (ZAP) | http://127.0.0.1:8090 | API key in `.env` |
+| **React web app (use this one)** | http://127.0.0.1 (port 80) | none, or `WEB_USER` and `WEB_PASSWORD` from `.env` when `AUTH_MODE=basic` |
+| Original web pages | http://127.0.0.1:8080 | same as above |
+| Dashboards (Grafana) | http://127.0.0.1:3001 | `admin`, password is `GRAFANA_ADMIN_PASSWORD` in `.env` |
+| Scanner (ZAP) | http://127.0.0.1:8090 | API key in `.env` (`ZAP_API_KEY`) |
 
-**Note:** `zap` and `webgoat` may show "unhealthy" in `docker compose ps`. That comes from their health checks. Both still answer requests.
+`zap` and `webgoat` can show "unhealthy" in `docker compose ps`. Their health checks are slow to pass; both still answer requests.
 
-**After a reboot** Docker stops the containers. Run `make up` again.
+**After a reboot** Docker stops the containers. Run `make up` again. A scan that was running when the backend stopped is marked `failed` with "interrupted" at the next start.
 
 ## Step 3: Check that it works
 
@@ -45,51 +53,58 @@ After it finishes, these addresses work from your own computer:
 make test
 ```
 
-You should see `44 passed` or similar. The browser tests are skipped unless you turn them on:
+This runs the offline tests (about 100 pass; the browser and integration tests are skipped). The browser and integration tests need the stack running:
 
 ```
-WASRA_E2E=1 .venv/bin/python -m pytest tests/e2e
+WASRA_INTEGRATION=1 WASRA_E2E=1 make test
 ```
 
-## Step 4: Scan something
+## Step 4: Scan DVWA (the default target)
 
-Only the websites listed in [TARGETS.md](TARGETS.md) can be scanned.
+DVWA is the target used for development and demos. Only the websites in [TARGETS.md](TARGETS.md) can be scanned.
 
-1. Open http://127.0.0.1:80 and log in.
-2. Click **Add target** if the site is not listed yet. Pick a website and rate the business context (criticality, data sensitivity, exposure, impact).
-3. Open the target and click **Start scan**. The page updates by itself. A scan can take a long time.
-4. When it says `done`, you see the ranked findings. Click a row to read why it got its score.
+1. Open http://127.0.0.1 and open the DVWA target (add it first if it is not listed: name, website, four context ratings).
+2. Choose a profile:
+   - **quick**: a few seconds to a few minutes, passive checks only, no attacks.
+   - **standard**: traditional and AJAX spider, active scan at Low strength, time limits. About 3 minutes on DVWA.
+   - **deep**: the reference scan, no limits. About 8 minutes on DVWA.
+   - **custom**: your own settings, checked by the server. INSANE strength is not offered.
+3. Click **Start scan**. The page shows the settings that were used and how long each stage took.
+4. When it says `done`, open the ranked findings. Sort any column by clicking its header. Download a finding (HTML or JSON), the full report, or the table as CSV.
 
-To scan the three practice sites from the terminal instead:
+From the terminal, the same default scan is:
 
 ```
-make scan-validation
+make scan-dvwa
 ```
 
-## Step 5: Rebuild the results tables
+DVWA's database is reset and its security level set to low before every scan, so one scan never changes the next.
+
+## Export and import a scan
+
+```
+python scripts/export_scan.py SCAN_ID          # writes results/exports/wasra-scan-SCAN_ID.json
+python scripts/import_scan.py FILE.json        # creates a new scan from the file; nothing is scanned
+```
+
+The file has `format` `wasra-scan` and `format_version` 1. Imports reject other versions, files over 25 MB, and malformed data with a message. Scores are recomputed on import, never trusted from the file. Importing the same file twice is refused.
+
+## Step 5: Build the results tables
 
 ```
 make experiments
 ```
 
-This reads the saved scan results and writes the experiment tables to `results/experiments/`.
+This reads the saved scan results and writes the experiment tables (JSON and CSV) to `results/experiments/`.
 
 ## Changing the frontend
 
-After editing files in `frontend/`:
-
 ```
 docker compose build frontend
-docker compose up -d frontend
+docker compose up -d --no-deps frontend
 ```
 
-To check the frontend builds without Docker:
-
-```
-cd frontend
-npm install
-npm run build
-```
+`--no-deps` restarts only the frontend. Without it, Docker also restarts Postgres (through the dependency chain), which is harmless when no scan runs but interrupts one that does.
 
 ## Stopping and restarting
 
@@ -99,12 +114,14 @@ npm run build
 | Start again | `make up` |
 | Delete containers and volumes (wipes the database) | `make clean` |
 
-`make clean` deletes stored scan results in the database. Raw files in `results/raw/` are kept.
+`make clean` deletes all stored targets and scans. Raw files in `results/raw/` are kept. Take a backup first:
+`docker compose exec -T postgres pg_dump -U wasra -d wasra > backup.sql`.
 
 ## When something goes wrong
 
+- **A scan fails with "Read timed out" to zap.** ZAP may be busy or still starting. Wait for `docker compose ps` to show zap, then retry.
+- **"only N MB of memory is free"** (HTTP 507). Free memory is below the threshold in `configs/resources.json`. Close other programs, then retry.
 - **Out of disk space.** Check with `df -h /`. Remove only images you do not need.
-- **The computer freezes during a scan.** Stop the scanner with `docker compose stop zap` and close other programs.
-- **A service will not start.** Read its log: `docker compose logs <service>`, for example `docker compose logs backend`.
+- **A service will not start.** Read its log: `docker compose logs <service>`.
 - **Port already in use.** Find what is using it with `ss -ltnp | grep <port>`.
-- **The web page asks for a login again and again.** Check the username and password in `.env` match what you type.
+- **The web page asks for a login again and again.** Check `AUTH_MODE` and the username and password in `.env`.
