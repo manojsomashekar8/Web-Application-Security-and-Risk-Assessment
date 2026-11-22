@@ -127,10 +127,11 @@ def _run_scan(scan_id: int, target_id: int, settings: dict) -> None:
         t = conn.execute("SELECT * FROM targets WHERE id=%s", (target_id,)).fetchone()
         zap = ZapClient(os.environ["ZAP_API_KEY"], os.environ.get("ZAP_URL", "http://zap:8090"))
         with _ZAP_LOCK:
+            zap_version = zap.version()
             timings = zap.run(t["url"], cookie=auth.cookie_for(t["url"]), settings=settings)
             raw = zap.alerts(t["url"])
-        conn.execute("UPDATE scans SET raw_alerts=%s::jsonb, stage_seconds=%s::jsonb WHERE id=%s",
-                     (json.dumps(raw), json.dumps(timings), scan_id))
+        conn.execute("UPDATE scans SET raw_alerts=%s::jsonb, stage_seconds=%s::jsonb, zap_version=%s WHERE id=%s",
+                     (json.dumps(raw), json.dumps(timings), zap_version, scan_id))
         ctx = {k: t[k] for k in CONTEXT_FIELDS}
         rows, overlap = scan_rows(raw, ctx)
         _store_findings(conn, scan_id, rows, ctx)

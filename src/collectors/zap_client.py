@@ -99,6 +99,9 @@ class ZapClient:
             self.clear_exclusions()
         return {k: round(v, 1) for k, v in timings.items()}
 
+    def version(self) -> str:
+        return self._get("/JSON/core/view/version/")["version"]
+
     def generate_report(self, file_name: str, template: str = "traditional-html") -> str:
         """ZAP's own report for the current session (the latest scan). Written to ZAP's /zap/reports folder,
         which is results/zap-reports on the host. Returns the file name."""
