@@ -122,6 +122,8 @@ class ZapClient:
         return file_name
 
     def alerts(self, baseurl: str, page: int = 500) -> list[dict]:
+        # ZAP stores URLs without default ports (http://bwapp:80 -> http://bwapp); querying with the port finds only the root.
+        baseurl = re.sub(r"^(https?://[^/:]+):(80|443)(?=/|$)", r"\1", baseurl)
         out, start = [], 0
         while True:
             batch = self._get("/JSON/core/view/alerts/", baseurl=baseurl, start=start, count=page)["alerts"]
