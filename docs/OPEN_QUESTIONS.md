@@ -59,3 +59,13 @@ What is still unresolved, and what is needed to settle each item.
 - Now that DVWA is the target we tune and develop on, no validation target stays unseen unless bWAPP is kept apart.
 - Default used: bWAPP stays the unseen validation target. Nothing is tuned on it, and its scans are not used to choose settings.
 - Needed: confirm this default, or name another unseen target.
+
+
+## Final state (2026-11-22)
+
+- Resolved since the earlier entries: scan coverage for DVWA and bWAPP (the port fix), the Juice Shop timing (measured), the backend crash during startup (restart policy, D59), and the frontend nginx startup race (per-request resolution, D60).
+- CVE mapping: `configs/cve_map.json` is still empty, so CVSS, EPSS and KEV are n/a for every finding. Default used: show n/a with the reason, never invent values. Needed: a reviewed mapping.
+- Client Spider: not active in the installed ZAP image. Default used: AJAX spider (D52). Needed: confirm the Client Side Integration add-on loads.
+- Memory cap on ZAP: the 8 GB cap made a deep scan fail. Default used: no cap (D57). The measured peak is 12.8 GB; the free-memory check requires 14 GB (D58).
+- Usage sampling runs only when `scripts/sample_usage.py` is started alongside a scan. A scan started from the web app is not sampled automatically. Default used: sample from the script. Needed: start the sampler from the backend, or accept unsampled UI scans.
+- Scans 10 and 11 failed while ZAP was restarting, and scan 12 failed under the memory cap. They are kept as history.
