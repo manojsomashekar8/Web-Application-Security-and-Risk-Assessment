@@ -21,13 +21,12 @@ def test_default_sort_is_risk_descending_and_header_reverses():
         b = p.chromium.launch()
         page = b.new_page()
         scan = page.request.get("http://127.0.0.1:8080/api/targets/1/latest-scan").json()
-        scans = [s for s in [page.request.get(f"http://127.0.0.1:8080/api/scans/{i}").json() for i in (scan or {}).get("id", [])] if s]
         if not scan or scan.get("status") != "done":
             pytest.skip("no finished scan on target 1")
         page.goto(f"{BASE}/scans/{scan['id']}")
         page.wait_for_load_state("networkidle")
         risks = _risks(page)
         assert risks == sorted(risks, reverse=True), "default order is not risk descending"
-        page.locator("th.sortable", has_text="Risk").click()
+        page.locator('th.sortable:text-is("Risk")').first.click()
         assert _risks(page) == sorted(risks), "second click does not reverse the order"
         b.close()
