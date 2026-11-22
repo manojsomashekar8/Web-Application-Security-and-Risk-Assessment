@@ -18,7 +18,7 @@ def test_mapped_cve_gets_all_three_feeds():
 
 def test_unmapped_finding_falls_back_to_none():
     out = enrich({**BASE, "id": "40018"}, FEEDS)
-    assert (out["cve"], out["cvss"], out["epss"], out["kev"]) == (None, None, None, False)
+    assert (out["cve"], out["cvss"], out["epss"], out["kev"]) == (None, None, None, None)  # KEV is n/a without a CVE
 
 
 def test_mapped_cve_missing_from_feeds_is_not_kev_or_scored():

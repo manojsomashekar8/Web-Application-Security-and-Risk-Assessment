@@ -88,7 +88,7 @@ def enrich(finding: dict, feeds: dict) -> dict:
 
     cvss = feeds["cvss"].get(cve) if cve and "cvss" not in unavailable else None
     epss = feeds["epss"].get(cve) if cve and "epss" not in unavailable else None
-    kev = None if "kev" in unavailable else bool(cve and cve in feeds["kev"])
+    kev = None if (not cve or "kev" in unavailable) else cve in feeds["kev"]  # no CVE means KEV does not apply: n/a, not "no"
     provenance = {"cvss": value("cvss", cvss is not None), "epss": value("epss", epss is not None),
                   "kev": value("kev", kev is not None)}
     return {**finding, "cve": cve, "cvss": cvss, "epss": epss, "kev": kev, "provenance": provenance,
