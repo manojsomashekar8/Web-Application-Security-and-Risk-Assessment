@@ -69,3 +69,10 @@ What is still unresolved, and what is needed to settle each item.
 - Memory cap on ZAP: the 8 GB cap made a deep scan fail. Default used: no cap (D57). The measured peak is 12.8 GB; the free-memory check requires 14 GB (D58).
 - Usage sampling runs only when `scripts/sample_usage.py` is started alongside a scan. A scan started from the web app is not sampled automatically. Default used: sample from the script. Needed: start the sampler from the backend, or accept unsampled UI scans.
 - Scans 10 and 11 failed while ZAP was restarting, and scan 12 failed under the memory cap. They are kept as history.
+
+## CVE values (CVSS, EPSS, KEV) are n/a for every finding
+
+- What is true: `configs/cve_map.json` is empty, and `data/feeds/nvd_subset.json` has 0 entries. No stored alert names a CVE. The only ZAP rule that normally carries CVEs is "Vulnerable JS Library (Powered by Retire.js)" (plugin 10003). It is loaded and enabled in the container. None of the stored scans (DVWA, Juice Shop, WebGoat, bWAPP) produced a 10003 alert, so there is no finding to map.
+- Why this is not a display bug: CVSS, EPSS and KEV belong to CVEs. Most ZAP web findings (missing headers, CSP, server version leaks) have no CVE, so n/a is correct for them.
+- What a real fix needs, in order: (1) a target whose pages load an old JavaScript library, so the Retire.js rule fires, and a stored sample of that alert to see its format; (2) a parser that reads the library name and version from that alert; (3) CVE lookup for that library version from a public source (OSV or NVD, fetched once, with the date and checksum recorded); (4) NVD subset filled with those CVEs, plus EPSS and KEV for them from the existing snapshots; (5) a per-finding mapping, because the CVE depends on the version, not just the plugin id (the current `cve_map.json` is keyed by plugin id only, so it cannot express this).
+- Default used: keep n/a with the reason shown, and do not fill `cve_map.json` by hand. Needed: confirm that a vulnerable-library target may be added to the scan list (it would be a new target, so it needs your approval), or name a target you already have.
