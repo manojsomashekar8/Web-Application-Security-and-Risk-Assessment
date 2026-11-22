@@ -53,7 +53,7 @@ def summarise() -> list[dict]:
                 recall=round(det["detected_classes"] / det["known_classes"], 4) if ok else None,
                 coverage_ok=ok, plugin_10003_alerts=sum(1 for a in alerts if a["pluginId"] == "10003"),
                 cve_text_alerts=sum(1 for a in alerts if "CVE-" in json.dumps(a)),
-                category_recall=categories(name, alerts) if ok else None,
+                category_recall=categories(name, alerts),
                 peak_zap_memory_mib=(meta.get("usage") or {}).get("zap", {}).get("mem_peak_mib"),
                 peak_zap_cpu_pct=(meta.get("usage") or {}).get("zap", {}).get("cpu_peak_pct"),
             )

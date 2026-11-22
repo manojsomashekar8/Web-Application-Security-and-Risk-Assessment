@@ -1,10 +1,46 @@
 {
- "generated": "2026-11-22T14:04:37+00:00",
+ "generated": "2026-11-22T14:04:51+00:00",
  "rows": [
   {
    "active_scan_seconds": null,
    "bands": {},
-   "category_recall": null,
+   "category_recall": [
+    {
+     "category": "SQL injection",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "Cross-site scripting",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "Broken access control",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "Path traversal",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "XML external entity",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "Insecure deserialization",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "Cross-site request forgery",
+     "detected": null,
+     "target": "webgoat"
+    }
+   ],
    "classes": {},
    "coverage_ok": false,
    "cve_text_alerts": 0,
@@ -46,7 +82,43 @@
    "bands": {
     "Low": 13
    },
-   "category_recall": null,
+   "category_recall": [
+    {
+     "category": "SQL injection",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "Cross-site scripting",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "Broken access control",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "Path traversal",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "XML external entity",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "Insecure deserialization",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "Cross-site request forgery",
+     "detected": null,
+     "target": "webgoat"
+    }
+   ],
    "classes": {
     "informational": 12,
     "vulnerability": 1
@@ -93,7 +165,43 @@
    "bands": {
     "Low": 13
    },
-   "category_recall": null,
+   "category_recall": [
+    {
+     "category": "SQL injection",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "Cross-site scripting",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "Broken access control",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "Path traversal",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "XML external entity",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "Insecure deserialization",
+     "detected": null,
+     "target": "webgoat"
+    },
+    {
+     "category": "Cross-site request forgery",
+     "detected": null,
+     "target": "webgoat"
+    }
+   ],
    "classes": {
     "informational": 12,
     "vulnerability": 1
