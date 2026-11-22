@@ -1,0 +1,46 @@
+{
+  "_comment": "Scan profiles. Every value is checked by src/scanprofile.py before use. Values follow docs/ZAP_NOTES.md (verified against ZAP 2.16.1). 'deep' is the scan we ran before profiles existed.",
+  "quick": {
+    "description": "Traditional spider with a short time cap, passive checks only. A few minutes; sends no attacks.",
+    "spider": "traditional",
+    "spider_minutes": 2,
+    "ajax_spider": false,
+    "active_scan": false,
+    "attack_strength": null,
+    "alert_threshold": null,
+    "max_scan_minutes": null,
+    "max_rule_minutes": null,
+    "threads_per_host": null,
+    "delay_ms": null
+  },
+  "standard": {
+    "description": "Traditional spider, AJAX spider, then active scan at Low strength with duration limits.",
+    "spider": "traditional",
+    "spider_minutes": 5,
+    "ajax_spider": true,
+    "ajax_minutes": 5,
+    "ajax_depth": 5,
+    "active_scan": true,
+    "attack_strength": "LOW",
+    "alert_threshold": "MEDIUM",
+    "max_scan_minutes": 60,
+    "max_rule_minutes": 5,
+    "threads_per_host": 8,
+    "delay_ms": 0
+  },
+  "deep": {
+    "description": "The reference scan: traditional spider, AJAX spider, passive wait, active scan at ZAP's default strength and threshold, no limits.",
+    "spider": "traditional",
+    "spider_minutes": 0,
+    "ajax_spider": true,
+    "ajax_minutes": 10,
+    "ajax_depth": 5,
+    "active_scan": true,
+    "attack_strength": "DEFAULT",
+    "alert_threshold": "DEFAULT",
+    "max_scan_minutes": 0,
+    "max_rule_minutes": 0,
+    "threads_per_host": 24,
+    "delay_ms": 0
+  }
+}
