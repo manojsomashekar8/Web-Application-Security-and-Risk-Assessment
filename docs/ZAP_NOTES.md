@@ -1,0 +1,111 @@
+# ZAP notes: what we use, what the installed version does
+
+Written from two sources, in this order of trust:
+1. **The installed ZAP** (container `zaproxy/zap-stable:2.16.1`, API on 127.0.0.1:8090). Every value below marked *verified* was read or set through its REST API on 2026-11-22.
+2. **The official documentation** at zaproxy.org (URLs in each section). Scraping the doc pages was unreliable (site navigation mixed into the text), so doc facts are summarised and should be re-checked against the page before citing.
+
+## Version and sources read
+
+- ZAP version: **2.16.1** (`/JSON/core/view/version/`, verified).
+- Docs read: packaged scans (baseline, full, API), the scan policy page, the active scan options page, the spider and AJAX spider pages, the automation options page, and the Client Spider blog post of 2026-07-06 (https://www.zaproxy.org/blog/2026-07-06-client-spider-now-recommended/). The internet was reachable from the host.
+
+## 1. Scan modes ZAP offers
+
+| Mode | What it does | Sends attacks? | Source |
+|---|---|---|---|
+| Baseline scan (packaged) | Spider, then passive checks only; reports warnings. Optional `-j` adds the modern spider | No | https://www.zaproxy.org/docs/docker/baseline-scan/ |
+| Full scan (packaged) | Spider, then full active scan | Yes | https://www.zaproxy.org/docs/docker/full-scan/ |
+| API scan (packaged) | Imports an API definition, then active scan of its operations | Yes | https://www.zaproxy.org/docs/docker/api-scan/ |
+| Quick Start / ZAPit | Spider and active scan of one URL from the desktop UI | Yes | https://www.zaproxy.org/docs/desktop/addons/quick-start |
+| Automation Framework | A YAML plan of jobs (spider, spiderAjax, passiveScan-config, activeScan, activeScan-policy, delay, report) | Depends on jobs | https://www.zaproxy.org/docs/automate/automation-framework/ |
+| Daemon REST API (what we use) | We call each job ourselves: spider, AJAX spider, passive wait, active scan, alerts | Yes, when we start the active scan | https://www.zaproxy.org/docs/api |
+
+The baseline scan's own help says the spider has no time limit by default (`-m` sets minutes), and that the AJAX spider is the default extra spider unless `-j` asks for the modern one. Source: the baseline page above.
+
+## 2. Settings that affect time or coverage, with installed defaults
+
+| Setting | Where (API) | Installed default (verified) | Meaning and source |
+|---|---|---|---|
+| Max scan duration (minutes, 0 = unlimited) | `ascan/view/optionMaxScanDurationInMins` | **0** (unlimited) | Stops the whole active scan. Doc: active scan options page https://www.zaproxy.org/docs/desktop/ui/dialogs/options/ascan/ |
+| Max rule duration (minutes, 0 = unlimited) | `ascan/view/optionMaxRuleDurationInMins` | **0** | Stops one rule. Same doc page |
+| Threads per host | `ascan/view/optionThreadPerHost` | **24** | Parallel requests per host. Doc: "may put extra strain on the target". Same doc page |
+| Hosts per scan | `ascan/view/optionHostPerScan` | **2** | Hosts scanned at once |
+| Delay between requests (ms) | `ascan/view/optionDelayInMs` | **0** | Slows the scan. Set in the scan's options |
+| Spider max depth | `spider/view/optionMaxDepth` | **5** | Link depth |
+| Spider max children | `spider/view/optionMaxChildren` | **0** (no limit) | Children per node |
+| Spider max duration (minutes) | `spider/view/optionMaxDuration` | **0** (no limit) | Time cap |
+| Spider threads | `spider/view/optionThreadCount` | **24** | Parallel requests |
+| AJAX spider max duration (minutes) | `ajaxSpider/view/optionMaxDuration` | **60** | Time cap. Our code overrides it per run |
+| AJAX spider max crawl depth | `ajaxSpider/view/optionMaxCrawlDepth` | **10** | Our code overrides it per run |
+| AJAX spider browser | `ajaxSpider/view/optionBrowserId` | **firefox-headless** | Our code passes `htmlunit` per run (see section 4) |
+| AJAX spider event wait (ms) | `ajaxSpider/view/optionEventWait` | **1000** | Wait after each click |
+| AJAX spider reload wait (ms) | `ajaxSpider/view/optionReloadWait` | **1000** | Wait after each reload |
+
+Attack strength and alert threshold (per scanner, per policy) are covered in section 3.
+
+## 3. Attack strength and alert threshold (verified)
+
+Set through `ascan/action/setScannerAttackStrength` and `ascan/action/setScannerAlertThreshold`, on the scanner id and the policy name. Checked on scanner 10045 of "Default Policy", then restored to DEFAULT:
+
+- Strength accepted: **LOW, MEDIUM, HIGH, DEFAULT**. A value that is not in the list is rejected with `does_not_exist`.
+- Threshold accepted: **OFF, LOW, MEDIUM, HIGH, DEFAULT**.
+- The default policy has **12 enabled scanners**, all at DEFAULT strength and threshold (`ascan/view/scanners/?policyId=0`).
+- INSANE exists in ZAP's UI and API. **We do not offer it** (task rule).
+
+Example responses:
+```
+GET /JSON/ascan/action/setScannerAttackStrength/?id=10045&attackStrength=LOW&scanPolicyName=Default%20Policy
+{"Result":"OK"}
+GET /JSON/ascan/action/setScannerAttackStrength/?id=10045&attackStrength=BOGUS&scanPolicyName=Default%20Policy
+{"code":"does_not_exist","message":"Does Not Exist"}
+```
+
+## 4. How our scan maps onto ZAP
+
+Our scan (`src/collectors/zap_client.py`, `run`):
+
+| Step | Our call | Value we pass | Installed default we override |
+|---|---|---|---|
+| Fresh session | `core/action/newSession` | name `wasra`, overwrite | — |
+| Traditional spider | `spider/action/scan` | `maxChildren=0`, `recurse=true` | depth stays 5, duration stays unlimited |
+| AJAX spider | `ajaxSpider/action/scan` | `browserId=htmlunit`, `maxDuration=10`, `maxCrawlDepth=5` | browser firefox-headless, duration 60, depth 10 |
+| Passive wait | `pscan/view/recordsToScan` | waits for 0 | — |
+| Active scan | `ascan/action/scan` | `recurse=true`, `inScopeOnly=false` | all scanner settings stay at DEFAULT, no duration limit |
+
+**What we currently leave at defaults:** the active scan's duration and rule-duration limits (both unlimited), thread count (24), delay (0), and every scanner's strength and threshold (DEFAULT). That is why the deep scan is slow and why its coverage is what it is.
+
+**Client Spider.** The blog recommends it, but it is not usable here: the image ships `client-alpha` (the Client Side Integration add-on), yet `client/view/sites`, `client/view/clientMap` and `client/action/startSpider` all return `bad_view` / `bad_action` in this running instance (verified). The Client Spider also needs the ZAP browser extension in the browser it launches. **Decision D52:** keep the AJAX spider for the standard and deep profiles. Revisit when the Client Side Integration add-on is confirmed loaded.
+
+**Browser for the AJAX spider.** We pass `htmlunit`. The installed default is `firefox-headless`. A scan with `htmlunit` completed on Juice Shop (scan 2), so it works here. Decision D53: keep `htmlunit` for the same results as before; record it in every scan's settings.
+
+## 5. Reports
+
+- The report add-on is installed (`reports-release-0.42.0`). The API lists templates including `traditional-html`, `traditional-json`, `traditional-md`, `traditional-xml`, `traditional-pdf`, `modern` and `sarif-json` (verified, `reports/view/templates/`).
+- `reports/action/generate` exists and needs parameters (it returned `missing_parameter` without them). We will confirm the parameter names by calling it in Task 2.
+- Our per-finding reports (Task 2) are written by our backend, not by ZAP. The whole-scan ZAP HTML report is offered as an extra download only if the API call works.
+
+## 6. Values the frontend may expose, with bounds we enforce
+
+| Field | Allowed values (server-side check) | Source of the list |
+|---|---|---|
+| Spider | `traditional`, `ajax`, `none` | Section 4 (Client Spider excluded, see above) |
+| Spider time cap (minutes) | 1 to 60 | Spider options (0 = unlimited is not offered, to bound scan time) |
+| Active scan | on / off | — |
+| Attack strength | LOW, MEDIUM, HIGH | Section 3 (INSANE not offered) |
+| Alert threshold | OFF, LOW, MEDIUM, HIGH | Section 3 |
+| Max scan duration (minutes) | 1 to 240 | Section 2 (0 = unlimited is not offered) |
+| Max rule duration (minutes) | 1 to 60 | Section 2 |
+| Threads per host | 1 to 24 | Section 2 (installed default 24 is the upper bound) |
+| Delay between requests (ms) | 0 to 2000 | Section 2 |
+| Excluded URL patterns | up to 20 regular-expression strings, each up to 200 characters | ZAP's context exclusion, to be confirmed in Task 1 |
+| Disabled rule ids | up to 100 numeric ids, each must exist in the default policy | Section 3 |
+
+## 7. Where the documentation was unclear or disagreed with the installed ZAP
+
+| Point | What we tested | Result |
+|---|---|---|
+| Spider and AJAX spider defaults are not all on the doc pages we could read | Read the values from the running API | Recorded in section 2 |
+| Doc pages list Client Spider as recommended, but the add-on is not active in this image | Called the client API endpoints | `bad_view` / `bad_action` (section 4) |
+| Our AJAX spider browser (`htmlunit`) differs from the installed default (`firefox-headless`) | Ran a full AJAX spider on Juice Shop with `htmlunit` (scan 2) | Works; kept (D53) |
+| Scan policy edits are persistent in the container | Set LOW and MEDIUM on scanner 10045, then restored DEFAULT | Restored; the container's default policy is unchanged |
+| Doc text on "thread per host" default is not on the page we read | Read the installed value | 24; the docs page does not state a number we could confirm |
