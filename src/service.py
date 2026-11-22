@@ -61,13 +61,20 @@ def create_target(name: str, url: str, ctx: dict) -> int:
     return row["id"]
 
 
-def start_scan(target_id: int) -> int:
+def start_scan(target_id: int, profile: str = "deep", custom: dict | None = None) -> int:
+    settings = resolve_settings(profile, custom)  # raises ValueError on bad input, before anything is stored
     conn = db.connect()
     scan_id = conn.execute(
-        "INSERT INTO scans (target_id, status, started_at) VALUES (%s,'running',now()) RETURNING id", (target_id,)
+        "INSERT INTO scans (target_id, status, started_at, settings) VALUES (%s,'running',now(),%s::jsonb) RETURNING id",
+        (target_id, json.dumps(settings)),
     ).fetchone()["id"]
-    threading.Thread(target=_run_scan, args=(scan_id, target_id), daemon=True).start()
+    threading.Thread(target=_run_scan, args=(scan_id, target_id, settings), daemon=True).start()
     return scan_id
+
+
+def resolve_settings(profile: str, custom: dict | None) -> dict:
+    from src.scanprofile import resolve
+    return resolve(profile, custom)
 
 
 _ZAP_LOCK = threading.Lock()  # one ZAP instance: scans run one at a time, the rest queue here
@@ -103,13 +110,13 @@ def _store_findings(conn, scan_id: int, rows: list[dict], ctx: dict) -> None:
         )
 
 
-def _run_scan(scan_id: int, target_id: int) -> None:
+def _run_scan(scan_id: int, target_id: int, settings: dict) -> None:
     conn = db.connect()
     try:
         t = conn.execute("SELECT * FROM targets WHERE id=%s", (target_id,)).fetchone()
         zap = ZapClient(os.environ["ZAP_API_KEY"], os.environ.get("ZAP_URL", "http://zap:8090"))
         with _ZAP_LOCK:
-            timings = zap.run(t["url"], cookie=auth.cookie_for(t["url"]))
+            timings = zap.run(t["url"], cookie=auth.cookie_for(t["url"]), settings=settings)
             raw = zap.alerts(t["url"])
         conn.execute("UPDATE scans SET raw_alerts=%s::jsonb, stage_seconds=%s::jsonb WHERE id=%s",
                      (json.dumps(raw), json.dumps(timings), scan_id))

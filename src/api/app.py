@@ -79,8 +79,12 @@ def latest_scan(tid: int):
 
 
 @app.post("/api/targets/{tid}/scan", dependencies=[Depends(require_auth)], status_code=202)
-def api_scan(tid: int):
-    return {"scan_id": service.start_scan(tid)}
+def api_scan(tid: int, body: dict | None = None):
+    body = body or {}
+    try:
+        return {"scan_id": service.start_scan(tid, body.get("profile", "deep"), body.get("custom"))}
+    except ValueError as exc:  # bad profile or custom field: nothing was started
+        raise HTTPException(422, str(exc))
 
 
 @app.get("/api/scans/{sid}", dependencies=[Depends(require_auth)])

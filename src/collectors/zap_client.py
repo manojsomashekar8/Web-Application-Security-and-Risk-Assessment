@@ -6,6 +6,7 @@ import requests
 
 ZAP_URL = os.environ.get("ZAP_URL", "http://127.0.0.1:8090")
 POLL_SECONDS = 5
+POLICY = "Default Policy"
 
 
 class ZapClient:
@@ -34,30 +35,67 @@ class ZapClient:
                       matchType="REQ_HEADER", matchRegex="false", matchString="Cookie", replacement=cookie,
                       initiators="")
 
-    def run(self, target: str, cookie: str | None = None) -> dict:
-        """Run the four stages and return how long each took, in seconds."""
+    def apply_settings(self, s: dict) -> None:
+        """Set ZAP options for one scan from a validated profile (src/scanprofile.py). Values are per run."""
+        self._get("/JSON/ascan/action/setOptionMaxScanDurationInMins/", Integer=s.get("max_scan_minutes") or 0)
+        self._get("/JSON/ascan/action/setOptionMaxRuleDurationInMins/", Integer=s.get("max_rule_minutes") or 0)
+        self._get("/JSON/ascan/action/setOptionThreadPerHost/", Integer=s.get("threads_per_host") or 24)
+        self._get("/JSON/ascan/action/setOptionDelayInMs/", Integer=s.get("delay_ms") or 0)
+        self._get("/JSON/spider/action/setOptionMaxDuration/", Integer=s.get("spider_minutes") or 0)
+        self._get("/JSON/ajaxSpider/action/setOptionBrowserId/", String="htmlunit")  # shortcut: installed default is firefox-headless, kept for comparability (D53)
+        scanners = self._get("/JSON/ascan/view/scanners/", scanPolicyName=POLICY)["scanners"]
+        ids = ",".join(str(x["id"]) for x in scanners)
+        self._get("/JSON/ascan/action/enableScanners/", ids=ids, scanPolicyName=POLICY)
+        if s.get("disable_rules"):
+            self._get("/JSON/ascan/action/disableScanners/", ids=",".join(s["disable_rules"]), scanPolicyName=POLICY)
+        if s.get("attack_strength"):
+            for x in scanners:
+                self._get("/JSON/ascan/action/setScannerAttackStrength/", id=x["id"],
+                          attackStrength=s["attack_strength"], scanPolicyName=POLICY)
+        if s.get("alert_threshold"):
+            for x in scanners:
+                self._get("/JSON/ascan/action/setScannerAlertThreshold/", id=x["id"],
+                          alertThreshold=s["alert_threshold"], scanPolicyName=POLICY)
+        for url in s.get("exclude_urls") or []:
+            self._get("/JSON/spider/action/excludeFromScan/", regex=url)
+            self._get("/JSON/ascan/action/excludeFromScan/", regex=url)
+
+    def clear_exclusions(self) -> None:
+        self._get("/JSON/spider/action/clearExcludedFromScan/")
+        self._get("/JSON/ascan/action/clearExcludedFromScan/")
+
+    def run(self, target: str, cookie: str | None = None, settings: dict | None = None) -> dict:
+        """Run the stages the profile asks for; return how long each one took, in seconds."""
+        from src.scanprofile import resolve
+        s = settings or resolve("deep")
         timings, clock = {}, time.monotonic
         self.set_cookie(cookie)
         self._get("/JSON/core/action/newSession/", name="wasra", overwrite="true")  # clean state per run
-        t0 = clock()
-        sid = self._get("/JSON/spider/action/scan/", url=target, maxChildren=0, recurse=True)["scan"]
-        self._wait("/JSON/spider/view/status/", sid)
-        timings["spider"] = clock() - t0
-        # AJAX spider renders client-side routes (SPA API endpoints the traditional spider misses).
-        t0 = clock()
-        self._get("/JSON/ajaxSpider/action/scan/", url=target, browserId="htmlunit",
-                  maxDuration=10, maxCrawlDepth=5)
-        while self._get("/JSON/ajaxSpider/view/status/")["status"] != "stopped":
-            time.sleep(POLL_SECONDS)
-        timings["ajax_spider"] = clock() - t0
-        t0 = clock()
-        while int(self._get("/JSON/pscan/view/recordsToScan/")["recordsToScan"]) > 0:
-            time.sleep(POLL_SECONDS)
-        timings["passive_wait"] = clock() - t0
-        t0 = clock()
-        aid = self._get("/JSON/ascan/action/scan/", url=target, recurse=True, inScopeOnly=False)["scan"]
-        self._wait("/JSON/ascan/view/status/", aid)
-        timings["active_scan"] = clock() - t0
+        try:
+            self.apply_settings(s)
+            if s.get("spider") == "traditional":
+                t0 = clock()
+                sid = self._get("/JSON/spider/action/scan/", url=target, maxChildren=0, recurse=True)["scan"]
+                self._wait("/JSON/spider/view/status/", sid)
+                timings["spider"] = clock() - t0
+            if s.get("ajax_spider"):
+                t0 = clock()
+                self._get("/JSON/ajaxSpider/action/scan/", url=target, browserId="htmlunit",
+                          maxDuration=s.get("ajax_minutes", 10), maxCrawlDepth=s.get("ajax_depth", 5))
+                while self._get("/JSON/ajaxSpider/view/status/")["status"] != "stopped":
+                    time.sleep(POLL_SECONDS)
+                timings["ajax_spider"] = clock() - t0
+            t0 = clock()
+            while int(self._get("/JSON/pscan/view/recordsToScan/")["recordsToScan"]) > 0:
+                time.sleep(POLL_SECONDS)
+            timings["passive_wait"] = clock() - t0
+            if s.get("active_scan"):
+                t0 = clock()
+                aid = self._get("/JSON/ascan/action/scan/", url=target, recurse=True, inScopeOnly=False)["scan"]
+                self._wait("/JSON/ascan/view/status/", aid)
+                timings["active_scan"] = clock() - t0
+        finally:
+            self.clear_exclusions()
         return {k: round(v, 1) for k, v in timings.items()}
 
     def alerts(self, baseurl: str, page: int = 500) -> list[dict]:
