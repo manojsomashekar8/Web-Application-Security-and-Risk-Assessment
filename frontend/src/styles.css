@@ -79,3 +79,6 @@ tr.detail p { margin: 0.2rem 0 0.6rem; line-height: 1.5; }
 }
 .dot { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 50%; margin-right: 0.3rem; }
 .dot.ok { background: var(--low); } .dot.bad { background: var(--high); }
+.grid-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.8rem; }
+.grid-form label { display: grid; gap: 0.25rem; font-weight: 600; }
+.grid-form textarea { min-height: 4rem; font: inherit; padding: 0.4rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); }

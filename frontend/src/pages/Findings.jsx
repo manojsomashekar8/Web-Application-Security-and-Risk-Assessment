@@ -84,6 +84,8 @@ export default function Findings() {
         </div>
       </div>
 
+      <ScanSettings scan={scan} />
+
       <div className="cards stats">
         <Stat label="Raw alerts" value={summary.raw} hint="Every alert the scanner raised" />
         <Stat label="Unique findings" value={summary.unique} hint="Repeats on the same URL and parameter merged" />
@@ -187,6 +189,30 @@ function Stat({ label, value, hint, tone }) {
       <div className="stat-value">{value}</div>
       <div className="stat-label">{label}</div>
       {hint && <div className="small muted">{hint}</div>}
+    </div>
+  );
+}
+
+// The exact settings this scan used, and how long each stage took (stored with the scan).
+function ScanSettings({ scan }) {
+  const s = scan.settings;
+  if (!s) return <p className="small muted">Settings: not recorded (this scan ran before profiles existed).</p>;
+  const stages = scan.stage_seconds || {};
+  return (
+    <div className="card">
+      <h3>Settings used: profile {s.profile}</h3>
+      <p className="small muted">{s.description}</p>
+      <div className="grid-dl">
+        {Object.entries(s).filter(([k]) => !["profile", "description"].includes(k)).map(([k, v]) => (
+          <div key={k} className="dl-row"><dt>{k}</dt><dd>{Array.isArray(v) ? (v.length ? v.join(", ") : "none") : String(v ?? "default")}</dd></div>
+        ))}
+      </div>
+      <h3 style={{ marginTop: "0.8rem" }}>Stage durations</h3>
+      <div className="grid-dl">
+        {Object.entries(stages).map(([k, v]) => (
+          <div key={k} className="dl-row"><dt>{k}</dt><dd>{v} s</dd></div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -58,3 +58,14 @@ def test_basic_mode_requires_login(client, monkeypatch):
     monkeypatch.setenv("WEB_PASSWORD", "pw")
     assert client.get("/api/targets").status_code == 401
     assert client.get("/api/targets", auth=("admin", "wrong")).status_code == 401
+
+
+@pytest.mark.parametrize("body", [
+    {"profile": "custom", "custom": {"attack_strength": "INSANE"}},
+    {"profile": "custom", "custom": {"threads_per_host": 999}},
+    {"profile": "insane"},
+])
+def test_scan_request_with_bad_settings_is_refused_before_anything_starts(client, monkeypatch, body):
+    monkeypatch.setenv("AUTH_MODE", "none")
+    r = client.post("/api/targets/1/scan", json=body)
+    assert r.status_code == 422

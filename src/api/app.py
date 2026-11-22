@@ -93,7 +93,8 @@ def scan_status(sid: int):
         s = conn.execute("SELECT * FROM scans WHERE id=%s", (sid,)).fetchone()
     if not s:
         raise HTTPException(404, "no such scan")
-    return {"id": s["id"], "status": s["status"], "error": s["error"]}
+    return {"id": s["id"], "status": s["status"], "error": s["error"], "settings": s["settings"],
+            "stage_seconds": s["stage_seconds"], "top10_overlap": s["top10_overlap"]}
 
 
 @app.get("/api/scans/{sid}/findings", dependencies=[Depends(require_auth)])
