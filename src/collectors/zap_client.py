@@ -1,5 +1,6 @@
 """Minimal ZAP REST client: spider, passive wait, active scan, alert paging."""
 import os
+import re
 import time
 
 import requests
@@ -60,6 +61,11 @@ class ZapClient:
             self._get("/JSON/spider/action/excludeFromScan/", regex=url)
             self._get("/JSON/ascan/action/excludeFromScan/", regex=url)
 
+    def site_urls(self, target: str) -> int:
+        """URLs in ZAP's site tree for the target's host (default port dropped, as ZAP stores them)."""
+        base = re.sub(r"^(https?://[^/:]+):(80|443)(?=/|$)", r"\1", target)
+        return len(self._get("/JSON/core/view/urls/", baseurl=base).get("urls", []))
+
     def clear_exclusions(self) -> None:
         self._get("/JSON/spider/action/clearExcludedFromScan/")
         self._get("/JSON/ascan/action/clearExcludedFromScan/")
@@ -74,11 +80,13 @@ class ZapClient:
         try:
             self.apply_settings(s)
             spider = s.get("spider", "traditional")  # the spider choice decides which spider runs
+            self.url_counts = {}
             if spider == "traditional":
                 t0 = clock()
                 sid = self._get("/JSON/spider/action/scan/", url=target, maxChildren=0, recurse=True)["scan"]
                 self._wait("/JSON/spider/view/status/", sid)
                 timings["spider"] = clock() - t0
+                self.url_counts["traditional"] = self.site_urls(target)
             if spider == "ajax" or s.get("ajax_spider"):
                 t0 = clock()
                 self._get("/JSON/ajaxSpider/action/scan/", url=target, browserId="htmlunit",
@@ -86,6 +94,7 @@ class ZapClient:
                 while self._get("/JSON/ajaxSpider/view/status/")["status"] != "stopped":
                     time.sleep(POLL_SECONDS)
                 timings["ajax_spider"] = clock() - t0
+                self.url_counts["ajax"] = self.site_urls(target)
             t0 = clock()
             while int(self._get("/JSON/pscan/view/recordsToScan/")["recordsToScan"]) > 0:
                 time.sleep(POLL_SECONDS)
