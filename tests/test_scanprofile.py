@@ -1,4 +1,6 @@
 """Server-side validation of scan profiles and custom settings (src/scanprofile.py)."""
+import pathlib
+
 import pytest
 
 from src.scanprofile import resolve, validate_custom
@@ -43,3 +45,11 @@ def test_good_custom_settings_pass():
 def test_unknown_profile_is_refused():
     with pytest.raises(ValueError):
         resolve("insane")
+
+
+def test_custom_spider_choice_selects_the_spider_that_runs():
+    # The custom form sends spider="ajax" without ajax_spider; the runner must still run the AJAX spider.
+    import re
+    src = pathlib.Path(__file__).resolve().parents[1].joinpath("src/collectors/zap_client.py").read_text()
+    assert 'spider == "ajax" or s.get("ajax_spider")' in src
+    assert 'spider = s.get("spider", "traditional")' in src

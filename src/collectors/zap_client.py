@@ -73,12 +73,13 @@ class ZapClient:
         self._get("/JSON/core/action/newSession/", name="wasra", overwrite="true")  # clean state per run
         try:
             self.apply_settings(s)
-            if s.get("spider") == "traditional":
+            spider = s.get("spider", "traditional")  # the spider choice decides which spider runs
+            if spider == "traditional":
                 t0 = clock()
                 sid = self._get("/JSON/spider/action/scan/", url=target, maxChildren=0, recurse=True)["scan"]
                 self._wait("/JSON/spider/view/status/", sid)
                 timings["spider"] = clock() - t0
-            if s.get("ajax_spider"):
+            if spider == "ajax" or s.get("ajax_spider"):
                 t0 = clock()
                 self._get("/JSON/ajaxSpider/action/scan/", url=target, browserId="htmlunit",
                           maxDuration=s.get("ajax_minutes", 10), maxCrawlDepth=s.get("ajax_depth", 5))
