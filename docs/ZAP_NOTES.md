@@ -109,3 +109,26 @@ Our scan (`src/collectors/zap_client.py`, `run`):
 | Our AJAX spider browser (`htmlunit`) differs from the installed default (`firefox-headless`) | Ran a full AJAX spider on Juice Shop with `htmlunit` (scan 2) | Works; kept (D53) |
 | Scan policy edits are persistent in the container | Set LOW and MEDIUM on scanner 10045, then restored DEFAULT | Restored; the container's default policy is unchanged |
 | Doc text on "thread per host" default is not on the page we read | Read the installed value | 24; the docs page does not state a number we could confirm |
+
+## 8. Option setters and exclusions (verified on 2.16.1, 2026-11-22)
+
+Each call below returned `{"Result":"OK"}` in the running container. Values were set to the defaults they already had, except where noted.
+
+| Call | Parameter | Used for |
+|---|---|---|
+| `ascan/action/setOptionMaxScanDurationInMins` | `Integer` | Max active scan duration (0 = unlimited) |
+| `ascan/action/setOptionMaxRuleDurationInMins` | `Integer` | Max duration per rule (0 = unlimited) |
+| `ascan/action/setOptionThreadPerHost` | `Integer` | Threads per host |
+| `ascan/action/setOptionDelayInMs` | `Integer` | Delay between requests |
+| `spider/action/setOptionMaxDuration` | `Integer` | Traditional spider time cap (0 = unlimited) |
+| `spider/action/setOptionThreadCount` | `Integer` | Traditional spider threads |
+| `ajaxSpider/action/setOptionMaxDuration` | `Integer` | AJAX spider time cap, minutes |
+| `ajaxSpider/action/setOptionBrowserId` | `String` | AJAX browser (we use `htmlunit`) |
+| `spider/action/excludeFromScan` and `ascan/action/excludeFromScan` | `regex` | Exclude URLs from the spider or the active scan |
+| `spider/view/excludedFromScan` and `ascan/view/excludedFromScan` | — | List the current exclusions |
+| `spider/action/clearExcludedFromScan` and `ascan/action/clearExcludedFromScan` | — | Clear **all** exclusions (no per-item removal exists) |
+| `ascan/action/setScannerEnabled` | `ids`, `enabled` | Enable or disable a scanner (not confirmed yet; `ids=10045` returned `bad_action` with the name we tried first) |
+
+**Mistake found and fixed:** while testing, an exclusion for `http://dvwa:80/logout.*` was added to both lists during DVWA scan 6. It was cleared about a minute later with the clear calls above. Both lists were verified empty afterwards. The effect on scan 6 is not measured; see docs/OPEN_QUESTIONS.md.
+
+**Still to verify before use:** the scanner-enable call name (`ascan/action/setScannerEnabled` is not the right name in this version).
