@@ -8,7 +8,7 @@ import requests
 pytestmark = pytest.mark.skipif(os.environ.get("WASRA_INTEGRATION") != "1", reason="needs running stack")
 BASE = "http://127.0.0.1:8080"
 AUTH = (os.environ.get("WEB_USER", "admin"), os.environ.get("WEB_PASSWORD", ""))
-TARGET = "http://juice-shop:3000"
+TARGET = "http://dvwa:80"  # DVWA is the scan target from now on (no new Juice Shop scans)
 CTX = {"criticality": "High", "data_sensitivity": "High", "internet_exposure": "High", "business_impact": "High"}
 
 
@@ -25,7 +25,7 @@ def test_scan_end_to_end_stores_ranked_findings():
     if existing:
         tid = existing["id"]
     else:
-        t = requests.post(f"{BASE}/api/targets", auth=AUTH, json={"name": "Juice Shop", "url": TARGET, **CTX}, timeout=30)
+        t = requests.post(f"{BASE}/api/targets", auth=AUTH, json={"name": "DVWA", "url": TARGET, **CTX}, timeout=30)
         assert t.status_code == 201, t.text
         tid = t.json()["id"]
     sid = requests.post(f"{BASE}/api/targets/{tid}/scan", auth=AUTH, timeout=30).json()["scan_id"]
