@@ -183,7 +183,7 @@ def findings_csv(scan_id: int) -> str:
         row = []
         for c in cols:
             v = "" if r[c] is None else r[c]
-            if isinstance(v, str) and v[:1] in "=+-@":
+            if isinstance(v, str) and v and v[0] in "=+-@":  # empty cells must stay empty
                 v = "'" + v
             row.append(v)
         w.writerow(row)

@@ -37,3 +37,16 @@ def test_csv_guards_against_formula_injection():
     finally:
         service.findings_for_scan = orig
     assert "'=HYPERLINK" in out
+
+
+def test_blank_cells_stay_blank_in_csv():
+    from src import service
+    orig = service.findings_for_scan
+    service.findings_for_scan = lambda sid: [{"rank_risk": 1, "type": "plain", "classification": "vulnerability",
+        "url": "u", "risk": 1.0, "zap_risk": "Low", "zap_confidence": "Low", "cwe": None, "owasp": None,
+        "cve": None, "cvss": None, "epss": None, "kev": None, "occurrences": 1, "explanation": "e"}]
+    try:
+        out = service.findings_csv(1)
+    finally:
+        service.findings_for_scan = orig
+    assert ",,,," in out.splitlines()[1]
