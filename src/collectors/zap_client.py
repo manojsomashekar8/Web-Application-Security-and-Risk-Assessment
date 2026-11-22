@@ -8,6 +8,8 @@ import requests
 ZAP_URL = os.environ.get("ZAP_URL", "http://127.0.0.1:8090")
 POLL_SECONDS = 5
 POLICY = "Default Policy"
+# firefox-headless is ZAP's default and the only browser that works here: HtmlUnit failed through the proxy (docs/ZAP_NOTES.md section 9, D67).
+AJAX_BROWSER = "firefox-headless"
 
 
 class ZapClient:
@@ -43,7 +45,7 @@ class ZapClient:
         self._get("/JSON/ascan/action/setOptionThreadPerHost/", Integer=s.get("threads_per_host") or 24)
         self._get("/JSON/ascan/action/setOptionDelayInMs/", Integer=s.get("delay_ms") or 0)
         self._get("/JSON/spider/action/setOptionMaxDuration/", Integer=s.get("spider_minutes") or 0)
-        self._get("/JSON/ajaxSpider/action/setOptionBrowserId/", String="htmlunit")  # shortcut: installed default is firefox-headless, kept for comparability (D53)
+        self._get("/JSON/ajaxSpider/action/setOptionBrowserId/", String=AJAX_BROWSER)
         scanners = self._get("/JSON/ascan/view/scanners/", scanPolicyName=POLICY)["scanners"]
         ids = ",".join(str(x["id"]) for x in scanners)
         self._get("/JSON/ascan/action/enableScanners/", ids=ids, scanPolicyName=POLICY)
@@ -89,7 +91,7 @@ class ZapClient:
                 self.url_counts["traditional"] = self.site_urls(target)
             if spider == "ajax" or s.get("ajax_spider"):
                 t0 = clock()
-                self._get("/JSON/ajaxSpider/action/scan/", url=target, browserId="htmlunit",
+                self._get("/JSON/ajaxSpider/action/scan/", url=target, browserId=AJAX_BROWSER,
                           maxDuration=s.get("ajax_minutes", 10), maxCrawlDepth=s.get("ajax_depth", 5))
                 while self._get("/JSON/ajaxSpider/view/status/")["status"] != "stopped":
                     time.sleep(POLL_SECONDS)
