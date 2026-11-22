@@ -94,6 +94,10 @@ if [ "$NO_START" -eq 1 ]; then
 fi
 make up
 
+# Fill the dashboards: experiment tables from the saved raw runs, then the validation matrix (scans and rows).
+make experiments
+make load-validation
+
 auth_mode=$(grep -E '^AUTH_MODE=' .env | cut -d= -f2 || true)
 say ""
 say "WASRA is running."
