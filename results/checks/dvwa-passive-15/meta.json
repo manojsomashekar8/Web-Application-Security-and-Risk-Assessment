@@ -1,0 +1,24 @@
+{
+    "scan_id": 15,
+    "target": "http://dvwa:80",
+    "status": "done",
+    "zap_version": "2.16.1",
+    "ajax_browser": "firefox-headless",
+    "started_at": "2026-11-22T09:49:23.981317+00:00",
+    "finished_at": "2026-11-22T09:52:45.456465+00:00",
+    "stage_seconds": {
+        "spider": 5.0,
+        "ajax_spider": 190.1,
+        "passive_wait": 0.0
+    },
+    "url_counts_cumulative_site_tree": {
+        "ajax": 63,
+        "traditional": 63
+    },
+    "raw_alerts": 4,
+    "alert_urls": 1,
+    "plugin_10003_alerts": 0,
+    "cve_text_alerts": 0,
+    "proxy_errors_during_scan": 0,
+    "note": "AJAX spider ran 190 s with no proxy errors; the site tree stayed at 63 URLs, so the AJAX stage added no new URLs to the tree"
+}

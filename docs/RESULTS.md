@@ -86,3 +86,11 @@ Earlier failures, kept as history: scans 10 and 11 failed while ZAP was restarti
 - Alerts: 4, all on the start page. Plugin 10003 (Retire.js) **did not fire**, and no alert text contains a CVE id.
 - Limit: passive checks ran on the pages in the site tree, but the AJAX spider did not reach the pages it normally finds (its deep run found 71 URLs), so pages loaded only by JavaScript were not checked. This is not a full answer about DVWA.
 - Result: no CVE mapping. CVSS, EPSS and KEV stay n/a (see docs/DECISIONS.md, D64 and D65).
+
+## Passive DVWA check with the AJAX browser fixed (scan 15, 2026-11-22)
+
+- Settings: custom, traditional spider (3-minute cap), AJAX spider (3-minute cap, depth 5, browser **firefox-headless**), active scan off. ZAP 2.16.1. Files: `results/checks/dvwa-passive-15/` (raw alerts, settings, `meta.json`).
+- AJAX browser: it ran for **190 s** (before the fix: 5 s, failing). No `Invalid response: HTTP/1.0 0` proxy errors during the scan.
+- URLs in ZAP's site tree after each spider (cumulative): traditional **63**, after AJAX **63**. The AJAX stage added no URLs to the tree. Whether it found pages already in the tree or found none is not settled: ZAP's AJAX result list did not parse into a URL count.
+- Alerts: 4, all on the start page. **Plugin 10003 did not fire.** No alert text contains a CVE id.
+- Result: no CVE mapping. CVSS, EPSS and KEV stay n/a (D61, D68).

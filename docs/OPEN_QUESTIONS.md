@@ -84,3 +84,16 @@ What is still unresolved, and what is needed to settle each item.
 - Default used: keep n/a with the reason (D61). No mapping was added.
 - Needed: approval for a standard or deep scan of DVWA, which reaches more pages, to see whether 10003 fires. If it does, the parsing and CVE steps in the previous entry follow.
 - Also needed: scans from before this change have no ZAP version and no settings (the re-imported raw scans are labelled "unrecorded"). Default used: keep them labelled that way.
+
+## Earlier scans ran with a failing AJAX spider (found 2026-11-22)
+
+- The AJAX browser (HtmlUnit) failed through ZAP's proxy (`HTTP/1.0 0`, root cause: ZAP's history database closed). In a failing scan the AJAX stage takes about 5 s instead of minutes. The fix is D67. Scan 15 is the first AJAX stage to run long with no proxy errors.
+- **Scans that ran with a failing AJAX stage (about 5 s):** the DVWA deep scans 1 to 9 from the reproduce runs (all AJAX stages 5.0 s), scan 13 (AJAX 5.0 s), and scan 14 (AJAX 5.0 s). Any claim that these scans reached JavaScript-only pages is unsupported.
+- **Scan that ran long (AJAX 135 s) and was not affected:** scan 6, the DVWA deep scan before profiles (135.2 s). Its AJAX stage worked as far as the time shows; its URL count was not stored.
+- **Juice Shop timed run (scan 2, earlier):** the AJAX stage took 145.3 s, which suggests it worked, but no URL count was stored, so this is not verified.
+- **Documents that describe AJAX results and need to be checked against this:**
+  - `docs/RESULTS.md`: the timed Juice Shop run table (AJAX 145.3 s); the profile comparison (standard 10 of 10 overlap and deep reference, both DVWA runs with a failing AJAX stage); the passive scan 14 section (correctly marked as failed).
+  - `docs/RESULTS.md` and `docs/WHAT_WAS_DONE.md`: WebGoat "2 pages" coverage result. Its AJAX stage is not recorded, so the cause of the 2 pages is unknown (the earlier explanation, that WebGoat is a single-page app, is not verified).
+  - `EXPLAIN.md` section 4 ("Why several spiders?"): the statement that the AJAX spider finds the JavaScript pages describes the intended design. The example "first run on Juice Shop found 95 pages but no API endpoints" is from an earlier run with an unrecorded AJAX state.
+  - `EXPLAIN.md` section 6 and `docs/RESULTS.md` Juice Shop numbers (raw alerts, unique findings, top-10 overlap): these come from the raw files, not from the AJAX stage, so they stand; the claims about what the scanner reached do not.
+- **Needed:** decide whether to re-run the affected scans with the fixed browser (a large change, needs your approval). Default used: keep the numbers, mark them as produced with a failing AJAX stage, and do not re-run.
