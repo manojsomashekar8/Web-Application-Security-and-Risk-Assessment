@@ -102,6 +102,29 @@ def scan_findings(sid: int):
     return service.findings_for_scan(sid)
 
 
+@app.get("/api/findings/{fid}/report.json", dependencies=[Depends(require_auth)])
+def finding_report_json(fid: int):
+    d = service.finding_detail_for(fid)
+    if d is None:
+        raise HTTPException(404, "no such finding")
+    return d
+
+
+@app.get("/api/findings/{fid}/report.html", dependencies=[Depends(require_auth)])
+def finding_report_html(fid: int):
+    from src.report.finding import finding_html
+    d = service.finding_detail_for(fid)
+    if d is None:
+        raise HTTPException(404, "no such finding")
+    return Response(finding_html(d), media_type="text/html; charset=utf-8")
+
+
+@app.get("/api/scans/{sid}/findings.csv", dependencies=[Depends(require_auth)])
+def scan_findings_csv(sid: int):
+    return Response(service.findings_csv(sid), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f"attachment; filename=scan-{sid}-findings.csv"})
+
+
 @app.get("/api/scans/{sid}/report.json", dependencies=[Depends(require_auth)])
 def scan_report(sid: int):
     return build_report(sid)

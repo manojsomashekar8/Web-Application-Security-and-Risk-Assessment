@@ -156,3 +156,35 @@ def findings_for_scan(scan_id: int) -> list[dict]:
 def latest_scan(target_id: int) -> dict | None:
     with db.connect() as conn:
         return conn.execute("SELECT * FROM scans WHERE target_id=%s ORDER BY id DESC LIMIT 1", (target_id,)).fetchone()
+
+
+def finding_detail_for(finding_id: int) -> dict | None:
+    from src.report.finding import finding_detail
+    from src.scoring.score import band
+    with db.connect() as conn:
+        f = conn.execute("SELECT * FROM findings WHERE id=%s", (finding_id,)).fetchone()
+        if f is None:
+            return None
+        scan = conn.execute("SELECT s.id, s.raw_alerts, t.url FROM scans s JOIN targets t ON t.id = s.target_id "
+                            "WHERE s.id=%s", (f["scan_id"],)).fetchone()
+    return finding_detail(f, {"id": scan["id"]}, scan["url"], scan["raw_alerts"], band(f["risk"]))
+
+
+def findings_csv(scan_id: int) -> str:
+    """Findings table as CSV. Cells starting with = + - @ are prefixed with ' so spreadsheets do not run them."""
+    import csv
+    import io
+    cols = ["rank_risk", "type", "classification", "url", "risk", "zap_risk", "zap_confidence", "cwe", "owasp",
+            "cve", "cvss", "epss", "kev", "occurrences", "explanation"]
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(cols)
+    for r in findings_for_scan(scan_id):
+        row = []
+        for c in cols:
+            v = "" if r[c] is None else r[c]
+            if isinstance(v, str) and v[:1] in "=+-@":
+                v = "'" + v
+            row.append(v)
+        w.writerow(row)
+    return buf.getvalue()
