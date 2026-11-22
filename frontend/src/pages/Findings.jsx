@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, band } from "../api.js";
-import { BandBadge, ClassBadge, StatusBadge, Value } from "../components.jsx";
+import { BandBadge, ClassBadge, StatusBadge, Value, naTitle } from "../components.jsx";
 
 const CLASSES = ["vulnerability", "potential", "informational", "excluded"];
 
@@ -124,7 +124,7 @@ export default function Findings() {
           <thead>
             <tr>
               <th>Rank</th><th>Finding</th><th>Class</th><th>Risk</th><th>Band</th>
-              <th>ZAP risk</th><th>Confidence</th><th>CVSS</th><th>EPSS</th><th>KEV</th><th>Count</th>
+              <th>ZAP risk</th><th>Confidence</th><th>CVSS (from CVE)</th><th>EPSS (from CVE)</th><th>KEV (from CVE)</th><th>Count</th>
             </tr>
           </thead>
           <tbody>
@@ -151,9 +151,9 @@ function FindingRow({ r, isOpen, onToggle }) {
         <td><BandBadge band={band(r.risk)} /></td>
         <td>{r.zap_risk}</td>
         <td>{r.zap_confidence}</td>
-        <td><Value v={r.cvss} digits={1} /></td>
-        <td><Value v={r.epss} digits={3} /></td>
-        <td>{r.kev ? "yes" : "no"}</td>
+        <td title={naTitle(r.provenance, "cvss")}><Value v={r.cvss} digits={1} /></td>
+        <td title={naTitle(r.provenance, "epss")}><Value v={r.epss} digits={3} /></td>
+        <td title={naTitle(r.provenance, "kev")}>{r.kev === null || r.kev === undefined ? <span className="muted">n/a</span> : r.kev ? "yes" : "no"}</td>
         <td>{r.occurrences}</td>
       </tr>
       {isOpen && (
@@ -166,7 +166,8 @@ function FindingRow({ r, isOpen, onToggle }) {
               <div className="dl-row"><dt>Internet exposure</dt><dd><Value v={factors.exposure} /></dd></div>
               <div className="dl-row"><dt>Impact (I)</dt><dd><Value v={factors.I} /></dd></div>
               <div className="dl-row"><dt>Likelihood (L)</dt><dd><Value v={factors.L} /></dd></div>
-              <div className="dl-row"><dt>CVE</dt><dd>{r.cve || "n/a"}</dd></div>
+              <div className="dl-row"><dt>Severity used (S)</dt><dd>{Number(factors.S).toFixed(2)} ({r.cvss != null ? `CVSS ${r.cvss}` : `ZAP risk ${r.zap_risk}`})</dd></div>
+              <div className="dl-row"><dt>CVE</dt><dd title={r.cve ? "" : naTitle(r.provenance, "cvss")}>{r.cve || "n/a"}</dd></div>
               <div className="dl-row"><dt>CWE</dt><dd>{r.cwe || "n/a"}</dd></div>
               <div className="dl-row"><dt>OWASP</dt><dd>{r.owasp || "n/a"}</dd></div>
               <div className="dl-row"><dt>Rank: CVSS only</dt><dd>{r.rank_cvss_only}</dd></div>
