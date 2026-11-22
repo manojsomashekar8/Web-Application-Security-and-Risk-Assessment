@@ -20,8 +20,8 @@ def test_full_flow():
                                                     "password": os.environ["WEB_PASSWORD"]})
         page = ctx.new_page()
         page.goto(f"{BASE}/targets/new")
-        page.fill("input[name=name]", "Juice Shop (e2e)")
-        page.fill("input[name=url]", "http://juice-shop:3000")
+        page.fill("input[name=name]", "DVWA (e2e)")
+        page.fill("input[name=url]", "http://dvwa:80")
         for k in ("criticality", "data_sensitivity", "internet_exposure", "business_impact"):
             page.select_option(f"select[name={k}]", "High")
         page.click("button[type=submit]")

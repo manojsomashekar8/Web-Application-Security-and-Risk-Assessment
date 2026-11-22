@@ -30,7 +30,10 @@ test:  ## unit tests (offline); with the stack up, also integration and e2e
 	@if [ "$(WASRA_INTEGRATION)" = 1 ]; then WASRA_INTEGRATION=1 $(PY) -m pytest -q tests/integration; fi
 	@if [ "$(WASRA_E2E)" = 1 ]; then WASRA_E2E=1 $(PY) -m pytest -q tests/e2e; fi
 
-scan-juiceshop:  ## scan Juice Shop through the backend API
+scan-dvwa:  ## default demo scan: DVWA through the backend API (resets DVWA before the scan)
+	$(PY) -m src.cli scan --url http://dvwa:80 --name "DVWA"
+
+scan-juiceshop:  ## scan Juice Shop through the backend API (kept for history; not the default)
 	$(PY) -m src.cli scan --url http://juice-shop:3000 --name "Juice Shop"
 
 scan-validation:  ## raw ZAP scans of DVWA, WebGoat, bWAPP (inside the backend container, logged in)
@@ -53,7 +56,7 @@ reproduce:  ## full run from a clean state: env, stack, tests, scan, report, rep
 	$(MAKE) up
 	DATABASE_URL="$(DBURL)" $(PY) -m src.experiments.run --store
 	WASRA_INTEGRATION=1 WASRA_E2E=1 $(MAKE) test
-	$(MAKE) scan-juiceshop
+	$(MAKE) scan-dvwa
 	$(MAKE) report
 	$(PY) scripts/gen_reproducibility.py
 	@echo "Outputs: results/reports/, results/, docs/RESULTS.md, docs/REPRODUCIBILITY.md"
