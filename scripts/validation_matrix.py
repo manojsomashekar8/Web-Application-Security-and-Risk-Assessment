@@ -10,6 +10,7 @@ import argparse
 import json
 import pathlib
 import subprocess
+import sys
 import time
 
 import requests
@@ -34,7 +35,7 @@ def psql(sql: str) -> str:
 def run_one(target_id: int, name: str, profile: str) -> dict:
     started = time.time()
     scan_id = requests.post(f"{API}/api/targets/{target_id}/scan", json={"profile": profile}, timeout=60).json()["scan_id"]
-    sampler = subprocess.Popen(["python3", str(ROOT / "scripts" / "sample_usage.py"), str(scan_id)],
+    sampler = subprocess.Popen([sys.executable, str(ROOT / "scripts" / "sample_usage.py"), str(scan_id)],
                                cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     aborted = False
     while True:
