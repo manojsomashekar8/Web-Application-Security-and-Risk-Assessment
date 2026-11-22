@@ -76,3 +76,11 @@ What is still unresolved, and what is needed to settle each item.
 - Why this is not a display bug: CVSS, EPSS and KEV belong to CVEs. Most ZAP web findings (missing headers, CSP, server version leaks) have no CVE, so n/a is correct for them.
 - What a real fix needs, in order: (1) a target whose pages load an old JavaScript library, so the Retire.js rule fires, and a stored sample of that alert to see its format; (2) a parser that reads the library name and version from that alert; (3) CVE lookup for that library version from a public source (OSV or NVD, fetched once, with the date and checksum recorded); (4) NVD subset filled with those CVEs, plus EPSS and KEV for them from the existing snapshots; (5) a per-finding mapping, because the CVE depends on the version, not just the plugin id (the current `cve_map.json` is keyed by plugin id only, so it cannot express this).
 - Default used: keep n/a with the reason shown, and do not fill `cve_map.json` by hand. Needed: confirm that a vulnerable-library target may be added to the scan list (it would be a new target, so it needs your approval), or name a target you already have.
+
+## CVE values: check result (2026-11-22)
+
+- Ran the approved quick check on DVWA (scan 10, ZAP 2.16.1). Plugin 10003 did not fire. Result, raw alerts and settings are in `results/checks/dvwa-quick-10003/` and docs/RESULTS.md.
+- The quick profile does not reach library-loading pages, so this does not show that DVWA is free of an old library.
+- Default used: keep n/a with the reason (D61). No mapping was added.
+- Needed: approval for a standard or deep scan of DVWA, which reaches more pages, to see whether 10003 fires. If it does, the parsing and CVE steps in the previous entry follow.
+- Also needed: scans from before this change have no ZAP version and no settings (the re-imported raw scans are labelled "unrecorded"). Default used: keep them labelled that way.
