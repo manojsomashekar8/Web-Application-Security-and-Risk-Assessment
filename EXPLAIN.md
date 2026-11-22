@@ -1,16 +1,16 @@
 # EXPLAIN: how this project works
 
-This document explains the whole project in plain language. It is written for someone who is new to web security and to this codebase. Each section says what a part does, why it exists, and where it lives.
+This document explains the whole project in plain language, for someone new to web security and to this code. Each section says what a part does, why it exists, and where it lives. Numbers quoted here are from the stored results; docs/RESULTS.md has the full tables.
 
 ---
 
-## 1. The problem in one paragraph
+## 1. The problem
 
-A web scanner finds many warnings about a website. Most tools rank those warnings by a generic severity number. That number ignores where the site is, what data it holds, and who can reach it. A warning that is harmless on a test site can be urgent on a public payment site.
+A web scanner finds many warnings about a website. Most tools rank them by a generic severity number that ignores where the site is, what data it holds, and who can reach it. A warning that is harmless on a test site can be urgent on a public payment site.
 
-This project asks: **can we rank warnings by how risky they are for a specific business, and explain every ranking in words?** The answer is a transparent scoring model, checked against simpler baselines and tested with controlled experiments.
+This project asks: **can we rank warnings by how risky they are for a specific business, and explain every ranking in words?** The answer is a transparent score, checked against simpler baselines and tested with controlled experiments.
 
-The project is a prototype. It has been checked on three deliberately vulnerable practice websites. It has not been validated on real production systems, and one scan is not enough to prove the model works.
+It is a prototype. It has been checked on deliberately vulnerable practice websites (DVWA is the main one; Juice Shop, WebGoat and bWAPP were used for validation). It has not been tested on real production systems, and a few scans cannot prove the model works.
 
 ---
 
@@ -20,26 +20,24 @@ The project is a prototype. It has been checked on three deliberately vulnerable
    You (browser)                                   Dashboards
        |                                               ^
        v                                               |
-  [ React frontend ]  --/api-->  [ FastAPI backend ] --metrics--> [ Prometheus ] --> [ Grafana ]
-   nginx, port 80               port 8080 (host)        |                              ^
-                                        |                  |                              |
-                                        v                  v                              |
-                                  [ ZAP scanner ]    [ PostgreSQL ] <--- read-only role -+
-                                        |
-                                        v
-                              [ practice websites ]
-                         Juice Shop, DVWA, WebGoat, bWAPP
+  [ React app ]  --/api-->  [ FastAPI backend ] --metrics--> [ Prometheus ] --> [ Grafana ]
+   nginx, port 80             port 8080 (host)        |                              ^
+                                      |                  |                              |
+                                      v                  v                              |
+                                [ ZAP scanner ]    [ PostgreSQL ] <--- read-only role -+
+                                      |
+                                      v
+                            [ practice websites ]
+                      DVWA (default), Juice Shop, WebGoat, bWAPP
 ```
 
-Read it from top left to bottom right:
+1. You use the **React app** to pick a website, choose a scan profile, and start a scan.
+2. The app talks to the **backend** through `/api`. The backend is the only part that starts scans.
+3. The backend tells **ZAP** (an open-source scanner) to visit the site and collect warnings.
+4. The backend cleans, classifies, enriches, scores and ranks the warnings, and saves them in **PostgreSQL**.
+5. **Prometheus** reads numbers from the backend, and **Grafana** draws charts from Prometheus and the database. Grafana can only read.
 
-1. You use the **React frontend** to pick a website and start a scan.
-2. The frontend talks to the **backend** through `/api`. The backend is the only part that starts scans.
-3. The backend tells **ZAP** (an open-source scanner) to visit the website and collect warnings.
-4. The backend cleans, enriches, scores and ranks the warnings, then saves them in **PostgreSQL**.
-5. **Prometheus** reads numbers from the backend. **Grafana** draws charts from Prometheus and from the database. Grafana can only read.
-
-Everything listens on `127.0.0.1` (your own computer). Nothing is exposed to the network.
+Every published port is bound to `127.0.0.1` (your own computer). The React app is on port 80, the original pages on 8080, Grafana on 3001, ZAP's API on 8090.
 
 ---
 
@@ -47,60 +45,69 @@ Everything listens on `127.0.0.1` (your own computer). Nothing is exposed to the
 
 | Folder or file | What it is for |
 |---|---|
-| `frontend/` | The React web interface (built with Vite, served by nginx) |
-| `src/api/` | The JSON API and login check |
-| `src/web/` | The older server-rendered pages (still available on port 8080) |
+| `frontend/` | The React app (Vite build, served by nginx in its own container) |
+| `src/api/` | The JSON API, login check, scan requests, downloads, import and export endpoints |
+| `src/web/` | The original server-rendered pages (port 8080) |
 | `src/collectors/` | Everything that talks to ZAP and logs into the practice sites |
+| `src/scanprofile.py` | Scan profiles and custom settings, with server-side bounds |
 | `src/normalize/` | Turns ZAP's raw alerts into one common shape |
 | `src/triage.py` | Classifies alerts and merges repeated ones |
-| `src/enrich/` | Adds CVE severity, EPSS and KEV data from saved copies of public lists |
+| `src/enrich/` | Adds CVE severity, EPSS and KEV data from saved public lists, with provenance |
 | `src/scoring/` | The risk formula, the explanation text and the comparison scores |
 | `src/pipeline.py` | Runs the steps above in order |
-| `src/service.py` | Rules: allowlist check, saving targets, running scans |
+| `src/service.py` | Rules: allowlist check, targets, scans, re-score, export and import |
+| `src/report/` | Per-finding reports (HTML and JSON) and the full-scan HTML page |
+| `src/importexport.py` | The versioned export and import format (`wasra-scan`, version 1) |
+| `src/health.py` | Health checks for Postgres, ZAP and feed freshness |
 | `src/metrics/` | Numbers that Prometheus reads |
-| `src/experiments/` | Five experiments that compare the scoring methods |
-| `src/report/` | Builds the JSON and HTML reports |
-| `db/migrations/` | Database table definitions, applied in order at startup |
-| `configs/` | Editable settings: score weights, context presets, CVE mapping |
-| `data/feeds/` | Saved copies of public data (EPSS scores, KEV list, NVD subset) |
+| `src/experiments/` | Experiments 1 to 7, each written as JSON and CSV |
+| `db/migrations/` | Database tables, applied in order at startup (001 to 011) |
+| `configs/` | Editable settings: score weights, scan profiles, validation threshold, resource limits, CVE mapping |
+| `data/feeds/` | Saved copies of public data (EPSS, KEV, an NVD subset) and a manifest with the snapshot date |
 | `grafana/` | Dashboards and alert rules, loaded automatically |
-| `prometheus/` | Prometheus configuration |
-| `tests/` | Automatic checks |
-| `results/` | Saved scan outputs and experiment results |
-| `docs/` | Design documents (plan, scoring, decisions, results, targets) |
+| `scripts/` | Export and import scripts, the usage sampler, the port check, the reproducibility report |
+| `tests/` | Automatic checks (unit, integration, browser) |
+| `results/` | Raw scan outputs, experiment results, ZAP reports and exports |
+| `docs/` | Design documents |
 
 ---
 
-## 4. What happens during a scan (step by step)
+## 4. Scan profiles and what happens during a scan
+
+You choose a profile on the target page:
+
+| Profile | What it does | DVWA time (measured) |
+|---|---|---|
+| **quick** | Traditional spider with a 2-minute cap, passive checks only, no attacks | 7 s |
+| **standard** | Traditional and AJAX spider, active scan at Low strength, time limits | 3 min 18 s |
+| **deep** | The reference scan: both spiders, active scan at ZAP's default strength, no limits | 8 min 21 s (12 min 12 s in the final reproduce run) |
+| **custom** | Your own settings, checked by the server (INSANE strength is not offered) | depends on settings |
+
+Each scan stores the exact settings it used, and the scan page shows them with the time each stage took.
 
 ```
 you click "Start scan"
-  -> the backend checks the website is on the allowlist (docs/TARGETS.md)
-  -> for DVWA, WebGoat and bWAPP: log in with the practice-site account
+  -> the backend checks the site is on the allowlist (docs/TARGETS.md)
+  -> checks free memory: refuses below 14 GB (ZAP needs about 12.8 GB at peak)
+  -> for DVWA, WebGoat and bWAPP: log in; for DVWA, first reset its database and set security low
   -> ZAP starts a fresh session and installs the session cookie
-  -> ZAP spider: follows the links it can see
-  -> ZAP AJAX spider: follows links that only appear after JavaScript runs
-  -> ZAP passive scan: checks every page it saw (no attacks sent)
-  -> ZAP active scan: sends test attacks to every URL it found
-  -> the backend downloads the alerts (in pages of 500)
+  -> applies the profile's settings to ZAP (time limits, strength, threads, delay, excluded URLs)
+  -> spider and AJAX spider (as the profile says)
+  -> passive checks finish
+  -> active scan (if the profile has one)
+  -> the backend downloads the alerts and stores them
   -> normalize -> triage -> enrich -> score -> rank
-  -> save the findings in PostgreSQL
+  -> save the findings, the settings, the timings and the ZAP HTML report
   -> the scan is marked "done"
 ```
 
-Only one scan runs at a time. A second request waits in a queue, because ZAP uses about 10 GB of memory and can only handle one scan well.
+Only one scan runs at a time. A second request waits in a queue. A scan that was running when the backend stopped is marked `failed` ("interrupted") at the next startup.
 
-Each scan also stores its **stage timings** (spider, AJAX spider, passive wait, active scan), its **raw alerts**, and its **top-10 overlap** between the framework ranking and the CVSS-only ranking. Storing the raw alerts is what makes a **re-score** possible: the Re-score button recomputes every finding from those stored alerts, using the target's current business context, and starts no new scan.
+**Why several spiders?** The normal spider cannot see pages that load through JavaScript. The AJAX spider drives a browser to find those pages, so the active scan can test them too. The Client Spider, which ZAP now recommends, is not active in the installed ZAP image, so we use the AJAX spider (decision D52).
 
-The timed Juice Shop run (scan 2, current code) took 15 minutes 30 seconds: 20 s spider, 145 s AJAX spider, and 755 s active scan. Details are in [docs/RESULTS.md](docs/RESULTS.md).
+**Why ports are stripped from URLs?** ZAP stores `http://dvwa:80` as `http://dvwa`. The alert lookup used the port, so it found only the front page until this was fixed (decision D21).
 
-### Why the scan uses several spiders
-
-The first run on Juice Shop found 95 pages but no API endpoints. The normal spider cannot see pages that load through JavaScript. The AJAX spider drives a headless browser to find those pages. Without it, the active scan never tests the API, so SQL injection and XSS in the API are missed.
-
-### Why ports are stripped from URLs
-
-ZAP stores `http://dvwa:80` as `http://dvwa`. For a long time the alert lookup used the port, so it only matched the front page. That is why early DVWA results showed 2 pages and 16 alerts instead of 71 pages and 775 alerts. The fix is in `src/collectors/run_scan.py`.
+**DVWA is reset before every scan** (`src/collectors/auth.py`). DVWA's own "Create / Reset Database" runs, the security cookie is set to low, and so the next scan never starts from a state an earlier scan changed.
 
 ---
 
@@ -108,11 +115,9 @@ ZAP stores `http://dvwa:80` as `http://dvwa`. For a long time the alert lookup u
 
 ### Step A: Normalize (`src/normalize/normalize.py`)
 
-ZAP reports each alert with a name, a risk level (High, Medium, Low, Informational), a confidence (High, Medium, Low, False Positive), and sometimes a CWE number. The normalizer converts these into one shape and maps each CWE to an OWASP Top 10 category.
+ZAP reports each alert with a name, a risk level (High, Medium, Low, Informational), a confidence (High, Medium, Low, False Positive), and sometimes a CWE number. The normalizer converts these to one shape and maps each CWE to an OWASP Top 10 category.
 
-Risk levels become numbers used by the score:
-
-| ZAP risk | Number |
+| ZAP risk | Number used by the score |
 |---|---|
 | High | 0.8 |
 | Medium | 0.5 |
@@ -123,42 +128,36 @@ Confidence becomes a number too: High 0.9, Medium 0.6, Low 0.3, False Positive 0
 
 ### Step B: Triage (`src/triage.py`)
 
-Two rules, both explained in the code:
-
-**Classification.** ZAP does not prove that an issue can be exploited. So each alert gets a label:
+**Classification.** ZAP does not prove that an issue can be exploited, so each alert gets a label:
 
 | Label | Rule | Meaning |
 |---|---|---|
 | `vulnerability` | Everything else | The scanner reports it. Not proven exploitable. |
-| `potential` | Confidence Low | Might be a real issue. Needs a manual check. |
+| `potential` | Confidence Low | Might be real. Needs a manual check. |
 | `informational` | ZAP risk Informational | A note, such as a missing header. Not a vulnerability. |
 | `excluded` | Confidence False Positive | ZAP thinks it is wrong. |
 
-**Grouping.** The same ZAP check can fire many times on one page with different test values. An alert's fingerprint is its plugin ID, URL path (without the query string), parameter and attack string. Alerts with the same fingerprint become one finding, and the count of raw alerts is kept. Different parameters or paths stay separate.
+**Grouping.** The same check can fire many times on one page with different test values. A fingerprint is the plugin ID, the URL path (without the query), the parameter and the attack string. Alerts with the same fingerprint become one finding, and the raw count is kept. On Juice Shop 1,103 raw alerts became 493 unique findings; on DVWA 775 became 544 (docs/RESULTS.md).
 
 ### Step C: Enrich (`src/enrich/enrich.py`)
 
-Some findings have a CVE number (a public ID for a known problem). For those, we look up:
+Findings with a CVE number (a public ID for a known problem) can get three values from saved public lists:
 
-- **CVSS**: a severity score from 0 to 10, from the NVD subset saved in `data/feeds/`.
-- **EPSS**: the estimated chance the problem is exploited within 30 days, from `data/feeds/epss.csv`.
-- **KEV**: whether CISA lists the problem as actively exploited, from `data/feeds/kev.json`.
+- **CVSS**: severity from 0 to 10 (NVD subset in `data/feeds/`).
+- **EPSS**: estimated chance of exploitation in the next 30 days (`epss.csv`).
+- **KEV**: whether CISA lists it as actively exploited (`kev.json`).
 
-Only findings with an explicit CVE mapping in `configs/cve_map.json` get these values. ZAP's web findings usually have no CVE, so most findings have empty CVSS, EPSS and KEV fields. **Missing data is shown as "n/a", never as 0.** We do not guess CVE numbers.
+Only findings with an explicit CVE mapping in `configs/cve_map.json` get them. **That file is currently empty**, so no ZAP finding gets a CVE, and CVSS, EPSS and KEV show as **n/a** for every finding. We do not invent values. The reason is shown as a tooltip on each n/a.
 
-**Provenance.** Each of the three values records where it came from: the feed name, the file, the snapshot date (from `data/feeds/manifest.json`), and a status (`ok`, `no_cve`, `not_in_feed` or `unavailable`). This is stored with the finding, so any number can be traced back to its source.
+**Provenance.** Each value records its feed name, file, snapshot date (from `data/feeds/manifest.json`) and status (`ok`, `no_cve`, `not_in_feed` or `unavailable`).
 
-**Resilience.** If a feed file is missing, unreadable, or has a wrong header, the pipeline logs a warning, sets those values to n/a, and carries on. The scan still finishes. Tests cover each feed in each failure case (decision D32).
+**Resilience.** A missing, unreadable or wrong-format feed file logs a warning, sets its values to n/a, and the scan continues.
 
 ### Step D: Score (`src/scoring/score.py`)
 
-Each finding gets three numbers:
-
-- **S, severity (0 to 1):** CVSS divided by 10 if there is a CVE. Otherwise the ZAP risk number.
-- **E, exploitability (0 to 1):** 1.0 if on the KEV list. Otherwise EPSS if available. Otherwise the ZAP confidence number.
-- **Context:** four answers about the business, each turned into a number (Low 0.33, Medium 0.66, High 1.0): criticality, data sensitivity, business impact, and internet exposure.
-
-Then the formulas:
+- **S, severity (0 to 1):** CVSS / 10 if there is a CVE, otherwise the ZAP risk number.
+- **E, exploitability (0 to 1):** 1.0 if on the KEV list, otherwise EPSS if known, otherwise the ZAP confidence number.
+- **Context:** the four business ratings, Low 0.33, Medium 0.66, High 1.0: criticality, data sensitivity, business impact, internet exposure.
 
 ```
 Impact     I = S x average(criticality, data sensitivity, business impact)
@@ -166,11 +165,9 @@ Likelihood L = E x internet exposure
 Risk score   = 100 x L x I          (always between 0 and 100)
 ```
 
-**Why multiply?** A problem needs both a serious flaw (S) and a realistic way in (E x exposure) to matter. If either is near zero, the risk is near zero. Adding them would let a harmless flaw score high just because the site is important.
+**Why multiply?** A problem needs both a serious flaw and a realistic way in to matter. If either is near zero, the risk is near zero.
 
 ### Step E: Label
-
-The label comes from the same score:
 
 | Score | Label |
 |---|---|
@@ -178,154 +175,131 @@ The label comes from the same score:
 | 30 to 59.9 | Medium |
 | below 30 | Low |
 
-### Step F: Explain (`src/scoring/score.py`, function `explain`)
+### Step F: Explain (`src/scoring/score.py`, `explain`)
 
-Every explanation is built from the numbers that produced the score. For example:
+The explanation is built from the same numbers as the score:
 
-> Risk 6.0 (Low). Thresholds: High 60+, Medium 30 to 59.9, Low below 30. Likelihood 0.60 = exploitability 0.60 (ZAP confidence Medium) x internet exposure 1.00 (High). Impact 0.10 = severity 0.10 (ZAP risk Informational) x mean of criticality High, data sensitivity High, business impact High. Main limit: severity 0.10.
+> Risk 45.0 (Medium). Thresholds: High 60+, Medium 30 to 59.9, Low below 30. Likelihood 0.90 = exploitability 0.90 (ZAP confidence High) x internet exposure 1.00 (High). Impact 0.50 = severity 0.50 (ZAP risk Medium) x mean of criticality High, data sensitivity High, business impact High. Main limit: severity 0.50.
 
-This answers the question a reviewer will ask: "the context is High, so why is the score low?" The answer is the **main limit**. Here the flaw itself is informational, so it cannot be urgent no matter how important the site is.
-
-A test checks that the label in the text always matches the number printed with it.
+It answers the question a reviewer asks: "the context is High, so why is the score low?" The answer is the main limit. A test checks that the label always matches the number printed with it.
 
 ### Step G: Rank (`src/pipeline.py`)
 
-Findings are ranked by four methods, each from its own score:
+Four methods rank the findings, each from its own score: `risk` (the framework score, the main result), `weighted_sum` (a simple weighted average), `cvss_only` and `zap_risk_only`. Ties are broken by plugin ID and URL, so repeated runs give the same order. Each scan also stores its **top-10 overlap** between the framework ranking and the CVSS-only ranking.
 
-| Method | Score |
-|---|---|
-| `risk` | The framework score above (the main result) |
-| `weighted_sum` | A simple weighted average, used as a comparison |
-| `cvss_only` | 100 x severity (ignores context and exploitability) |
-| `zap_risk_only` | 100 x ZAP risk level (ignores context) |
-
-Ties are broken by plugin ID and then URL, so repeated runs give the same order. A test checks that changing the input order does not change the result.
-
-**Scan-level number.** For each scan we also compute the **top-10 overlap**: how many of the framework's top 10 findings are also in the CVSS-only top 10, out of 10. The timed Juice Shop run scored 0.8.
-
-**Why are the rankings often the same?** In one scan, most findings have the same ZAP risk and confidence. When the inputs are equal, every method gives an equal score, so they produce the same order. The methods only differ when the findings differ in CVE data, KEV status or ZAP risk. Tests in `tests/test_ranking_methods.py` show both cases.
+**Why are the rankings often the same?** In one scan most findings share the same ZAP risk and confidence, so the methods agree. They differ only when findings differ in CVE data, KEV status or ZAP risk. Tests in `tests/test_ranking_methods.py` show both cases.
 
 ---
 
-## 6. Evaluation: how we know it works
+## 6. Re-score, export and import
 
-A score that looks sensible is not evidence. The project runs five experiments (`make experiments`):
-
-| Experiment | Question it answers |
-|---|---|
-| 1. Detection | How many known vulnerability types does each target's scan find? |
-| 2. Ranking | How much do the four rankings agree (Kendall tau, top-k overlap)? |
-| 3. Context sensitivity | Does changing only the business context change the context-aware score, while the CVSS-only ranking stays the same? |
-| 4. Weights | Does the weighted-sum ranking stay stable when weights change inside documented ranges? |
-| 5. Ablation | What happens when each factor is removed in turn? |
-
-Every experiment writes a JSON file and a CSV file (for spreadsheets) to `results/experiments/`. Experiment 6 compares raw alerts with unique findings. Experiment 7 gives detection per vulnerability category.
-
-**Coverage rule.** A validation run is only judged if it reached at least 10 distinct URLs (`configs/validation.json`). A run below that threshold, such as WebGoat with 2 pages, shows "Coverage too low" instead of precision and recall. It is never shown as 0 (decisions D42 and D43).
-
-**Precision and recall** on the validation dashboard: precision = matching alerts / total alerts; recall = known vulnerability types detected / known types. Precision is low because most ZAP alerts are informational (missing headers, cookie flags) and do not match a known vulnerability type.
-
-Results are summarised in [docs/RESULTS.md](docs/RESULTS.md). Current limits:
-
-- One run per target. No repeat runs, so no variance estimate.
-- WebGoat is a single-page app. The scanner reached only 2 of its pages, so its numbers say nothing about detection.
-- Most ZAP web findings have no CVE, so the framework's advantage over the baselines comes mostly from context, not from CVE data.
-- Precision is low because most alerts are minor (missing headers and similar). That is expected for a web scanner.
-- Each target was scanned once for validation. Re-runs would show how much results vary.
+- **Re-score** recomputes every finding of a scan from its stored raw alerts, using the target's current business ratings. No new scan starts. Scans from before raw alerts were stored cannot be re-scored; the page says so.
+- **Export** writes one finished scan as a versioned JSON file (`format` `wasra-scan`, `format_version` 1), with the target, the settings, the stage timings and the raw alerts. `scripts/export_scan.py SCAN_ID` writes it to `results/exports/`.
+- **Import** (`scripts/import_scan.py FILE` or the API) checks the format version, the size (25 MB), and every field. Unknown versions, corrupt files and malformed alerts are refused with a message. Scores are **recomputed** from the raw alerts, never trusted from the file. The imported target must still be on the allowlist, and importing never starts a scan. Importing the same file twice is refused as a duplicate.
 
 ---
 
-## 7. The web interface (React)
+## 7. Downloads and reports
 
-The frontend is in `frontend/`. It is a single-page app with four screens:
+| What | Made by | Where |
+|---|---|---|
+| **ZAP report (HTML)** | ZAP itself (its `traditional-html` template), when the scan finishes | Scan page header. Covers the whole scan |
+| Full report (HTML and JSON) | Our backend | Scan page header |
+| Findings table (CSV) | Our backend. Cells starting with `= + - @` are quoted so spreadsheets do not run them | Scan page header |
+| Per-finding report (HTML and JSON) | Our backend: name, description, solution, references, URL, parameter, attack, evidence, CWE, OWASP, ZAP risk and confidence, the grouped count, CVSS/EPSS/KEV or n/a with the reason, every score factor, the explanation, the context ratings, and the rank under each method | "Report" column of each finding row |
+
+ZAP's report is generated for the scan's session, so it cannot be made for one finding; that is why per-finding reports come from our backend. All scanner text is escaped in HTML, and a test checks that `<script>` in the evidence comes out escaped.
+
+---
+
+## 8. The web app (React)
+
+Four screens at `frontend/`:
 
 | Screen | Route | What you do |
 |---|---|---|
-| Targets | `/` | See every target and its latest scan status |
-| Add target | `/targets/new` | Pick a website from the allowlist and rate its business context |
-| Target | `/targets/:id` | See the context, start a scan, open the latest results |
-| Scan results | `/scans/:id` | See summary cards, filter findings, expand a row to read why it scored that way |
+| Targets | `/` | See each target and its latest scan, and the system status (Postgres, ZAP, feed age; older than 30 days is stale) |
+| Add target | `/targets/new` | Pick a site from the allowlist and rate its business context |
+| Target | `/targets/:id` | Choose a profile (or custom settings), start a scan, open the latest results |
+| Scan results | `/scans/:id` | Settings and stage timings, summary, classification, filters, sortable table, downloads, and an expandable explanation per finding |
 
-A **system status panel** on the targets page shows whether Postgres, ZAP and the feed snapshot are healthy. A feed snapshot older than 30 days shows as stale (decision D31).
+The results table sorts by any column (default: framework risk, highest first; ties keep the stored order). Missing values show as "n/a" with a tooltip giving the reason. Scanner text is never shown as HTML.
 
-The results screen shows:
-
-- **Raw alerts** (every alert the scanner raised) and **unique findings** (after merging repeats). The gap between them is the noise removed by grouping.
-- **High, Medium and Low counts** from the framework score.
-- **Classification** counts, with a click to filter.
-- A table with the rank, class, score, band, ZAP risk, confidence, CVSS, EPSS, KEV and count. Missing values show as "n/a".
-- An expandable explanation with each factor and the rank under every method.
-
-Scan progress updates automatically while the scan runs.
-
-The frontend is built into a small nginx container. nginx serves the app and forwards `/api` to the backend. The backend still checks the login, so the browser asks for the WASRA username and password once.
+If the app runs in `AUTH_MODE=basic`, it shows a login form and keeps the credentials in memory only.
 
 ---
 
-## 8. Dashboards (Grafana)
+## 9. Dashboards (Grafana)
 
-Dashboards are **automatic**. Grafana loads them from `grafana/provisioning/` on startup, so you never create them by hand. The same goes for the data source and the alert rule.
+Dashboards load from `grafana/provisioning/` at startup, so nothing is set up by hand.
 
-**Target variable.** The overview dashboard has a `target` filter at the top. Choose one target or all of them. The new panels follow it: findings by framework band, scan duration per stage, the count of findings with n/a enrichment, and the top-10 overlap.
+- **WASRA overview**: a `target` filter; scans by status; findings by ZAP risk; average framework risk per target; findings by classification; raw alerts vs unique findings; findings by framework band; scan duration per stage; findings with n/a enrichment; top-10 overlap; and CPU and memory of ZAP and the backend during the latest scan.
+- **WASRA validation**: the latest run per target by default, with a run-date selector. The results table shows known types, detected types, matching alerts, total alerts, precision, recall and run time. Where a run reached fewer than 10 pages, precision and recall say **"Coverage too low"** instead of a number, never 0. A note explains that most ZAP alerts are informational, so alert-level precision is low. Recall by category is shown too.
+- **WASRA ranking stability**: top 10 by framework risk, with the four rankings side by side.
 
-**Validation dashboard.** It shows the latest run for each target by default, with one row per target. A run-date variable selects an older run. Its panels are the results table (with precision and recall, or "Coverage too low"), recall per vulnerability category, and recall per target. A note panel explains how precision is computed.
-
-| Dashboard | Panels |
-|---|---|
-| WASRA overview | Scans by status, findings by ZAP risk, average framework risk per target, scans over time (table), findings by classification, raw alerts vs unique findings |
-| WASRA ranking stability | Top 10 findings by framework risk for a chosen scan, with all four rankings side by side, and the risk of top findings across scans |
-| WASRA validation | Detection precision, recall and detected-type counts per target (from the validation results table) |
-
-The alert rule `kev-finding` fires when a KEV-listed finding appears on a monitored target.
-
-Prometheus reads `/metrics` from the backend. The metrics are computed from the database on every scrape, so they are never out of date and nothing is stored in memory.
-
-Grafana connects to PostgreSQL with a **read-only role** (`grafana_ro`). It cannot change data or start scans.
+Prometheus reads `/metrics` from the backend on every scrape, computed from the database. Grafana reads through a **read-only** role.
 
 ---
 
-## 9. Safety rules
+## 10. Validation and experiments
 
-- **Allowlist.** A scan only starts for a URL listed in `docs/TARGETS.md`. The server checks this, not the browser.
-- **Local only.** Every port is bound to `127.0.0.1`.
-- **Secrets.** `.env` is not committed to git. `make env` generates random passwords.
-- **Practice-site logins.** The default accounts of the practice apps are only used inside the Docker network.
+Seven experiments (`make experiments`), each written as JSON and CSV in `results/experiments/`:
+
+1. **Detection**: known vulnerability types found per target, precision and recall.
+2. **Ranking**: agreement between rankings (Kendall tau, top-k overlap).
+3. **Context sensitivity**: changing one business factor moves the framework score, not the CVSS-only ranking.
+4. **Weights**: how stable the weighted-sum ranking is when weights change.
+5. **Ablation**: what happens when one factor is removed.
+6. **Deduplication**: raw alerts against unique findings, per target.
+7. **Categories**: detection per vulnerability category.
+
+Precision = matching alerts / total alerts. Recall = known types detected / known types. Per-category recall is 1 or 0 because each app lists one class per category. Results are in docs/RESULTS.md.
+
+**Limits:** each validation target was scanned once; WebGoat's single-page app is barely reachable, so its numbers say nothing about detection; most ZAP findings have no CVE, so the framework's gain over the baselines comes mostly from context.
+
+---
+
+## 11. Safety rules
+
+- **Allowlist in both auth modes.** A URL not in `docs/TARGETS.md` is refused by the server.
+- **Local only.** Every published port is bound to `127.0.0.1`. `make up` refuses to start in `AUTH_MODE=none` if any port is bound elsewhere (`scripts/check_bindings.py`, tested).
+- **AUTH_MODE.** `none` (the default) skips the login. `basic` adds one: a constant-time credential check, and the app keeps the credentials in memory only.
+- **Scan requests are validated** against fixed bounds (`src/scanprofile.py`). Unknown fields are refused. The frontend never sends raw ZAP calls.
+- **Memory check** before a scan: refused below 14 GB free.
+- **Secrets.** `.env` is never committed. `make env` generates random passwords.
+- **Practice-site logins** are the apps' public defaults, used only inside the Docker network.
 - **Read-only dashboards.** Grafana cannot write.
-- **AUTH_MODE.** `none` (the default) skips the login. It is only safe because `make up` refuses to start if any published port is bound to something other than 127.0.0.1 (`scripts/check_bindings.py`, tested). `basic` adds a login: the React app shows a login form, keeps the credentials in memory only, and sends them with each request. The server compares them in constant time.
-- **Allowlist in both modes.** A URL that is not in `docs/TARGETS.md` is rejected whether or not a login is required.
 
 ---
 
-## 10. Running it
-
-See [docs/HOW_TO_START.md](docs/HOW_TO_START.md) for the full guide. In short:
+## 12. Running it
 
 ```
-make env                 # first time only: create .env with random passwords
-make up                  # start all services (migrations run automatically)
-make test                # offline unit tests
-make scan-validation     # scan the three practice sites (slow, one at a time)
+./install.sh             # fresh Ubuntu 22.04 or 24.04: installs what is missing, creates .env, starts everything
+make up                  # start the stack (if it is installed already)
+make scan-dvwa           # the default demo scan (about 8 minutes, deep)
+make test                # offline tests; with the stack up: WASRA_INTEGRATION=1 WASRA_E2E=1 make test
 make experiments         # rebuild the experiment tables
+make reproduce           # full clean run (deletes the database; back it up first)
 make down                # stop everything
 ```
 
-Then open:
-
-- http://127.0.0.1:80 for the new React interface
-- http://127.0.0.1:8080 for the original server-rendered pages
-- http://127.0.0.1:3001 for Grafana
+Then open http://127.0.0.1 (the app), http://127.0.0.1:3001 (Grafana), or http://127.0.0.1:8080 (the original pages).
 
 ---
 
-## 11. Known limits and what is next
+## 13. Known limits and what is next
 
 | Limit | What would fix it |
 |---|---|
-| WebGoat barely scanned (single-page app) | Seed the scanner from API endpoints, or report WebGoat as a coverage limit |
-| Juice Shop scan time measured once (15.5 min) | Repeat the timed run to see variation |
-| One validation run per target | Repeated runs with variance reported |
-| Most findings lack CVEs | A reviewed CVE mapping for more finding types |
-| Recent commits may not be pushed from this machine | Push with an account that has write access; see docs/OPEN_QUESTIONS.md |
-| Literature list written from memory, not checked online | Verify each source and add DOIs before citing it (docs/LITERATURE.md) |
+| `configs/cve_map.json` is empty, so CVSS, EPSS and KEV are n/a for every finding | Build a reviewed mapping from ZAP plugin IDs to CVEs |
+| The Client Spider is not active in the installed ZAP image | Confirm the Client Side Integration add-on loads, then compare it with the AJAX spider |
+| ZAP's report is per scan, not per finding | A per-finding ZAP report is not possible with this ZAP design |
+| Each validation target scanned once | Repeated runs, with variation reported |
+| WebGoat barely reachable (single-page app) | Seed the scanner from API endpoints, or report WebGoat as a coverage limit |
+| Scans made before raw-alert storage cannot be re-scored or exported | Re-run them |
+| Memory: ZAP needs about 12.8 GB at peak; a container cap of 8 GB made scans fail | Measured limits are recorded in docs/REPRODUCIBILITY.md; no cap is set |
+| The browser test for downloads and the export/import round trip depend on a finished scan existing | Keep one scan in the reproduce run |
+| Literature list was written from memory | Verify each source and add DOIs before citing it (docs/LITERATURE.md) |
 
-For the reasoning behind each choice, see [docs/DECISIONS.md](docs/DECISIONS.md). For what is still open, see [docs/OPEN_QUESTIONS.md](docs/OPEN_QUESTIONS.md).
+Decisions are in [docs/DECISIONS.md](docs/DECISIONS.md). Open questions, with the default used for each, are in [docs/OPEN_QUESTIONS.md](docs/OPEN_QUESTIONS.md).
