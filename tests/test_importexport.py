@@ -79,3 +79,9 @@ def test_content_hash_is_stable_for_the_same_scan():
     a = ie.content_hash(ie.parse(raw(doc())))
     b = ie.content_hash(ie.parse(raw(doc())))
     assert a == b
+
+
+def test_empty_alert_list_is_a_valid_result():
+    d = doc()
+    d["scan"]["raw_alerts"] = []
+    assert ie.validate(ie.parse(raw(d)))["alerts"] == []

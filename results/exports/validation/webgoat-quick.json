@@ -1,0 +1,40 @@
+{
+ "exported_at": "2026-11-22T14:05:03+00:00",
+ "feed_snapshot": {
+  "snapshot_date": "2026-11-17"
+ },
+ "format": "wasra-scan",
+ "format_version": 1,
+ "scan": {
+  "finished_at": "2026-11-22T10:02:28.212607+00:00",
+  "profile": "quick",
+  "raw_alerts": [],
+  "settings": {
+   "active_scan": false,
+   "ajax_spider": false,
+   "alert_threshold": null,
+   "attack_strength": null,
+   "delay_ms": null,
+   "description": "Traditional spider with a short time cap, passive checks only. A few minutes; sends no attacks.",
+   "max_rule_minutes": null,
+   "max_scan_minutes": null,
+   "spider": "traditional",
+   "spider_minutes": 2,
+   "threads_per_host": null
+  },
+  "stage_seconds": {
+   "passive_wait": 0.0,
+   "spider": 5.0
+  },
+  "started_at": "2026-11-22T10:02:19.291605+00:00"
+ },
+ "source": "results/validation/webgoat/quick",
+ "target": {
+  "business_impact": "High",
+  "criticality": "High",
+  "data_sensitivity": "High",
+  "internet_exposure": "High",
+  "name": "WebGoat",
+  "url": "http://webgoat:8080/WebGoat/"
+ }
+}

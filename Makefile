@@ -42,6 +42,9 @@ scan-validation:  ## raw ZAP scans of DVWA, WebGoat, bWAPP (inside the backend c
 	docker compose exec -T backend python -m src.collectors.run_scan --target http://webgoat:8080/WebGoat --name webgoat
 	docker compose exec -T backend python -m src.collectors.run_scan --target http://bwapp:80 --name bwapp
 
+load-validation:  ## load the saved validation matrix (WebGoat and bWAPP, all profiles) into a fresh database
+	for f in results/exports/validation/*.json; do $(PY) scripts/import_scan.py "$$f" || true; done
+
 experiments:  ## validation experiments 1-5 from saved raw alerts (offline)
 	DATABASE_URL="$(DBURL)" $(PY) -m src.experiments.run --store
 

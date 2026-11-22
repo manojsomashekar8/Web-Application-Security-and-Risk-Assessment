@@ -57,8 +57,8 @@ def validate(data: dict) -> dict:
     _require(isinstance(settings, dict), "scan.settings: must be an object")
     clean_settings = validate_custom({k: v for k, v in settings.items() if k in FIELDS}) if profile == "custom" else {}
     alerts = s.get("raw_alerts")
-    _require(isinstance(alerts, list) and 0 < len(alerts) <= MAX_ALERTS,
-             f"scan.raw_alerts: a list of 1 to {MAX_ALERTS} alerts")
+    _require(isinstance(alerts, list) and len(alerts) <= MAX_ALERTS,
+             f"scan.raw_alerts: a list of up to {MAX_ALERTS} alerts (empty is a valid result)")
     for i, a in enumerate(alerts):
         _require(isinstance(a, dict), f"raw_alerts[{i}]: not an object")
         for key in ("pluginId", "alert", "url", "risk", "confidence"):
