@@ -77,3 +77,12 @@ Earlier failures, kept as history: scans 10 and 11 failed while ZAP was restarti
 - Result: 4 alerts (Missing Anti-clickjacking Header, CSP Header Not Set, Server Leaks Version Information, X-Content-Type-Options Header Missing). **Plugin 10003 (Vulnerable JS Library, Retire.js) did not fire.** The spider ran for 5 s and visited only a few pages.
 - What this shows: the quick profile does not reach the pages where a library would be loaded, so this run cannot tell whether DVWA serves an old library. It does not prove that DVWA is free of one.
 - Consequence: no CVE mapping was added. CVSS, EPSS and KEV stay n/a for every finding, and the n/a reason stays visible (see docs/DECISIONS.md, D61).
+
+## Passive DVWA check, traditional and AJAX spider (scan 14, 2026-11-22)
+
+- Settings: custom, traditional spider (3-minute cap), AJAX spider (3-minute cap, depth 5), active scan off. ZAP 2.16.1. Files: `results/checks/dvwa-passive-14/`.
+- Login: confirmed before the scan. The DVWA session has the cookies `PHPSESSID` and `security=low`, and the logout link is present.
+- URLs found: the traditional spider put **61** URLs in ZAP's site tree. The AJAX spider added **none** (the count stayed at 61). It stopped after 5 seconds, not 3 minutes, and its HtmlUnit browser logged `Invalid response: HTTP/1.0 0` (ZAP proxy errors). The same error appeared in earlier runs.
+- Alerts: 4, all on the start page. Plugin 10003 (Retire.js) **did not fire**, and no alert text contains a CVE id.
+- Limit: passive checks ran on the pages in the site tree, but the AJAX spider did not reach the pages it normally finds (its deep run found 71 URLs), so pages loaded only by JavaScript were not checked. This is not a full answer about DVWA.
+- Result: no CVE mapping. CVSS, EPSS and KEV stay n/a (see docs/DECISIONS.md, D64 and D65).
