@@ -1,0 +1,16 @@
+{
+ "active_scan": true,
+ "ajax_depth": 5,
+ "ajax_minutes": 5,
+ "ajax_spider": true,
+ "alert_threshold": "MEDIUM",
+ "attack_strength": "LOW",
+ "delay_ms": 0,
+ "description": "Traditional spider, AJAX spider, then active scan at Low strength with duration limits.",
+ "max_rule_minutes": 5,
+ "max_scan_minutes": 60,
+ "profile": "standard",
+ "spider": "traditional",
+ "spider_minutes": 5,
+ "threads_per_host": 8
+}

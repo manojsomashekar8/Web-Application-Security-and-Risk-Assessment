@@ -1,0 +1,39 @@
+{
+ "aborted_at_90_min": false,
+ "error": null,
+ "finished_at": "2026-11-22T13:45:52.610316+00:00",
+ "profile": "deep",
+ "scan_id": 23,
+ "stage_seconds": {
+  "active_scan": 674.7,
+  "ajax_spider": 155.4,
+  "passive_wait": 0.0,
+  "spider": 5.1
+ },
+ "started_at": "2026-11-22T13:31:43.81468+00:00",
+ "status": "done",
+ "target": "http://bwapp:80",
+ "url_counts_after_spider": {
+  "ajax": 70,
+  "traditional": 68
+ },
+ "usage": {
+  "backend": {
+   "cpu_avg_pct": 0.3,
+   "cpu_peak_pct": 5.7,
+   "mem_avg_mib": 57,
+   "mem_peak_mib": 69,
+   "samples": 113
+  },
+  "zap": {
+   "cpu_avg_pct": 294.8,
+   "cpu_peak_pct": 715.3,
+   "mem_avg_mib": 9070,
+   "mem_peak_mib": 15401,
+   "samples": 113
+  }
+ },
+ "wall_seconds": 848.8,
+ "zap_image": "zaproxy/zap-stable:2.16.1@sha256:7840969c7c9fead565bf9734b12f49f6886db90b1d35b1f74d79710bbd081dab",
+ "zap_version": "2.16.1"
+}

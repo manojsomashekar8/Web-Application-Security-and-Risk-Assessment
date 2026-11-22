@@ -1,0 +1,404 @@
+{
+ "generated": "2026-11-22T14:04:37+00:00",
+ "rows": [
+  {
+   "active_scan_seconds": null,
+   "bands": {},
+   "category_recall": null,
+   "classes": {},
+   "coverage_ok": false,
+   "cve_text_alerts": 0,
+   "detected_types": 0,
+   "known_types": 7,
+   "matching_alerts": 0,
+   "missed_types": [
+    "Broken access control",
+    "Cross-site request forgery",
+    "Cross-site scripting",
+    "Insecure deserialization",
+    "Path traversal",
+    "SQL injection",
+    "XML external entity"
+   ],
+   "peak_zap_cpu_pct": 45.1,
+   "peak_zap_memory_mib": 3867,
+   "plugin_10003_alerts": 0,
+   "precision": null,
+   "profile": "quick",
+   "raw_alerts": 0,
+   "recall": null,
+   "stage_seconds": {
+    "passive_wait": 0.0,
+    "spider": 5.0
+   },
+   "target": "webgoat",
+   "top10_overlap_with_deep": "n/a",
+   "total_seconds": 9,
+   "unique_findings": 0,
+   "url": "http://webgoat:8080/WebGoat/",
+   "urls_after_ajax": null,
+   "urls_after_traditional": 1,
+   "zap_image": "zaproxy/zap-stable:2.16.1@sha256:7840969c7c9fead565bf9734b12f49f6886db90b1d35b1f74d79710bbd081dab",
+   "zap_version": "2.16.1"
+  },
+  {
+   "active_scan_seconds": 35.0,
+   "bands": {
+    "Low": 13
+   },
+   "category_recall": null,
+   "classes": {
+    "informational": 12,
+    "vulnerability": 1
+   },
+   "coverage_ok": false,
+   "cve_text_alerts": 0,
+   "detected_types": 0,
+   "known_types": 7,
+   "matching_alerts": 0,
+   "missed_types": [
+    "Broken access control",
+    "Cross-site request forgery",
+    "Cross-site scripting",
+    "Insecure deserialization",
+    "Path traversal",
+    "SQL injection",
+    "XML external entity"
+   ],
+   "peak_zap_cpu_pct": 194.7,
+   "peak_zap_memory_mib": 4375,
+   "plugin_10003_alerts": 0,
+   "precision": null,
+   "profile": "standard",
+   "raw_alerts": 13,
+   "recall": null,
+   "stage_seconds": {
+    "active_scan": 35.0,
+    "ajax_spider": 185.2,
+    "passive_wait": 0.0,
+    "spider": 5.0
+   },
+   "target": "webgoat",
+   "top10_overlap_with_deep": "10/10",
+   "total_seconds": 236,
+   "unique_findings": 13,
+   "url": "http://webgoat:8080/WebGoat/",
+   "urls_after_ajax": 1,
+   "urls_after_traditional": 1,
+   "zap_image": "zaproxy/zap-stable:2.16.1@sha256:7840969c7c9fead565bf9734b12f49f6886db90b1d35b1f74d79710bbd081dab",
+   "zap_version": "2.16.1"
+  },
+  {
+   "active_scan_seconds": 40.0,
+   "bands": {
+    "Low": 13
+   },
+   "category_recall": null,
+   "classes": {
+    "informational": 12,
+    "vulnerability": 1
+   },
+   "coverage_ok": false,
+   "cve_text_alerts": 0,
+   "detected_types": 0,
+   "known_types": 7,
+   "matching_alerts": 0,
+   "missed_types": [
+    "Broken access control",
+    "Cross-site request forgery",
+    "Cross-site scripting",
+    "Insecure deserialization",
+    "Path traversal",
+    "SQL injection",
+    "XML external entity"
+   ],
+   "peak_zap_cpu_pct": 248.5,
+   "peak_zap_memory_mib": 4554,
+   "plugin_10003_alerts": 0,
+   "precision": null,
+   "profile": "deep",
+   "raw_alerts": 13,
+   "recall": null,
+   "stage_seconds": {
+    "active_scan": 40.0,
+    "ajax_spider": 190.2,
+    "passive_wait": 0.0,
+    "spider": 5.0
+   },
+   "target": "webgoat",
+   "top10_overlap_with_deep": "10/10",
+   "total_seconds": 246,
+   "unique_findings": 13,
+   "url": "http://webgoat:8080/WebGoat/",
+   "urls_after_ajax": 1,
+   "urls_after_traditional": 1,
+   "zap_image": "zaproxy/zap-stable:2.16.1@sha256:7840969c7c9fead565bf9734b12f49f6886db90b1d35b1f74d79710bbd081dab",
+   "zap_version": "2.16.1"
+  },
+  {
+   "active_scan_seconds": null,
+   "bands": {
+    "Low": 170
+   },
+   "category_recall": [
+    {
+     "category": "SQL injection",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "Cross-site scripting",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "OS command injection",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "File inclusion",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "Path traversal",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "CSRF",
+     "detected": true,
+     "target": "bwapp"
+    },
+    {
+     "category": "XML external entity",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "HTTP response splitting",
+     "detected": false,
+     "target": "bwapp"
+    }
+   ],
+   "classes": {
+    "informational": 3,
+    "potential": 6,
+    "vulnerability": 161
+   },
+   "coverage_ok": true,
+   "cve_text_alerts": 0,
+   "detected_types": 1,
+   "known_types": 8,
+   "matching_alerts": 14,
+   "missed_types": [
+    "Cross-site scripting",
+    "File inclusion",
+    "HTTP response splitting",
+    "OS command injection",
+    "Path traversal",
+    "SQL injection",
+    "XML external entity"
+   ],
+   "peak_zap_cpu_pct": 49.3,
+   "peak_zap_memory_mib": 3287,
+   "plugin_10003_alerts": 0,
+   "precision": 0.0419,
+   "profile": "quick",
+   "raw_alerts": 334,
+   "recall": 0.125,
+   "stage_seconds": {
+    "passive_wait": 0.0,
+    "spider": 5.0
+   },
+   "target": "bwapp",
+   "top10_overlap_with_deep": "8/10",
+   "total_seconds": 17,
+   "unique_findings": 170,
+   "url": "http://bwapp:80",
+   "urls_after_ajax": null,
+   "urls_after_traditional": 68,
+   "zap_image": "zaproxy/zap-stable:2.16.1@sha256:7840969c7c9fead565bf9734b12f49f6886db90b1d35b1f74d79710bbd081dab",
+   "zap_version": "2.16.1"
+  },
+  {
+   "active_scan_seconds": 210.1,
+   "bands": {
+    "Low": 383
+   },
+   "category_recall": [
+    {
+     "category": "SQL injection",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "Cross-site scripting",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "OS command injection",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "File inclusion",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "Path traversal",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "CSRF",
+     "detected": true,
+     "target": "bwapp"
+    },
+    {
+     "category": "XML external entity",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "HTTP response splitting",
+     "detected": false,
+     "target": "bwapp"
+    }
+   ],
+   "classes": {
+    "informational": 188,
+    "potential": 8,
+    "vulnerability": 187
+   },
+   "coverage_ok": true,
+   "cve_text_alerts": 0,
+   "detected_types": 1,
+   "known_types": 8,
+   "matching_alerts": 28,
+   "missed_types": [
+    "Cross-site scripting",
+    "File inclusion",
+    "HTTP response splitting",
+    "OS command injection",
+    "Path traversal",
+    "SQL injection",
+    "XML external entity"
+   ],
+   "peak_zap_cpu_pct": 615.4,
+   "peak_zap_memory_mib": 11848,
+   "plugin_10003_alerts": 0,
+   "precision": 0.0425,
+   "profile": "standard",
+   "raw_alerts": 659,
+   "recall": 0.125,
+   "stage_seconds": {
+    "active_scan": 210.1,
+    "ajax_spider": 125.1,
+    "passive_wait": 0.0,
+    "spider": 5.0
+   },
+   "target": "bwapp",
+   "top10_overlap_with_deep": "10/10",
+   "total_seconds": 348,
+   "unique_findings": 383,
+   "url": "http://bwapp:80",
+   "urls_after_ajax": 70,
+   "urls_after_traditional": 68,
+   "zap_image": "zaproxy/zap-stable:2.16.1@sha256:7840969c7c9fead565bf9734b12f49f6886db90b1d35b1f74d79710bbd081dab",
+   "zap_version": "2.16.1"
+  },
+  {
+   "active_scan_seconds": 674.7,
+   "bands": {
+    "Low": 381
+   },
+   "category_recall": [
+    {
+     "category": "SQL injection",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "Cross-site scripting",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "OS command injection",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "File inclusion",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "Path traversal",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "CSRF",
+     "detected": true,
+     "target": "bwapp"
+    },
+    {
+     "category": "XML external entity",
+     "detected": false,
+     "target": "bwapp"
+    },
+    {
+     "category": "HTTP response splitting",
+     "detected": false,
+     "target": "bwapp"
+    }
+   ],
+   "classes": {
+    "informational": 188,
+    "potential": 8,
+    "vulnerability": 185
+   },
+   "coverage_ok": true,
+   "cve_text_alerts": 0,
+   "detected_types": 1,
+   "known_types": 8,
+   "matching_alerts": 28,
+   "missed_types": [
+    "Cross-site scripting",
+    "File inclusion",
+    "HTTP response splitting",
+    "OS command injection",
+    "Path traversal",
+    "SQL injection",
+    "XML external entity"
+   ],
+   "peak_zap_cpu_pct": 715.3,
+   "peak_zap_memory_mib": 15401,
+   "plugin_10003_alerts": 0,
+   "precision": 0.0426,
+   "profile": "deep",
+   "raw_alerts": 657,
+   "recall": 0.125,
+   "stage_seconds": {
+    "active_scan": 674.7,
+    "ajax_spider": 155.4,
+    "passive_wait": 0.0,
+    "spider": 5.1
+   },
+   "target": "bwapp",
+   "top10_overlap_with_deep": "10/10",
+   "total_seconds": 849,
+   "unique_findings": 381,
+   "url": "http://bwapp:80",
+   "urls_after_ajax": 70,
+   "urls_after_traditional": 68,
+   "zap_image": "zaproxy/zap-stable:2.16.1@sha256:7840969c7c9fead565bf9734b12f49f6886db90b1d35b1f74d79710bbd081dab",
+   "zap_version": "2.16.1"
+  }
+ ]
+}
