@@ -37,6 +37,10 @@ def validate_target(name: str, url: str, ctx: dict) -> list[str]:
     return errors
 
 
+class ResourceError(Exception):
+    """Not enough free memory to start a scan safely."""
+
+
 class DuplicateTarget(Exception):
     """A target with this URL already exists (targets.url is unique)."""
 
@@ -61,8 +65,15 @@ def create_target(name: str, url: str, ctx: dict) -> int:
     return row["id"]
 
 
+def mem_available_mib() -> int:
+    return next((int(l.split()[1]) // 1024 for l in open("/proc/meminfo") if l.startswith("MemAvailable")), 0)
+
+
 def start_scan(target_id: int, profile: str = "deep", custom: dict | None = None) -> int:
     settings = resolve_settings(profile, custom)  # raises ValueError on bad input, before anything is stored
+    need = json.loads((ROOT / "configs" / "resources.json").read_text())["min_mem_available_mb"]
+    if mem_available_mib() < need:  # refuse rather than start a scan that will run the host out of memory
+        raise ResourceError(f"only {mem_available_mib()} MB of memory is free; a scan needs {need} MB")
     conn = db.connect()
     scan_id = conn.execute(
         "INSERT INTO scans (target_id, status, started_at, settings) VALUES (%s,'running',now(),%s::jsonb) RETURNING id",

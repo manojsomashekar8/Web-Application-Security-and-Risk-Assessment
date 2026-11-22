@@ -267,6 +267,33 @@
         },
         "overrides": []
       }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Scan CPU and memory during the latest scan (per target)",
+      "gridPos": {
+        "x": 0,
+        "y": 38,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prom"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "wasra_scan_usage{target=~\"$target\", stat=~\"cpu_peak_pct|mem_peak_mib\"}",
+          "legendFormat": "{{target}} {{container}} {{stat}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
     }
   ],
   "templating": {

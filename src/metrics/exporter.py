@@ -76,3 +76,12 @@ class WasraCollector(Collector):
             yield stages
             yield overlap
             yield na
+            usage = GaugeMetricFamily("wasra_scan_usage", "CPU and memory of a container during the latest scan",
+                                      labels=["target", "container", "stat"])
+            for r in conn.execute(latest.replace("s.top10_overlap FROM", "s.top10_overlap, s.usage FROM")
+                                  + "SELECT t.url, l.usage FROM latest l JOIN targets t ON t.id = l.target_id"):
+                for container, stats in (r["usage"] or {}).items():
+                    for stat, value in stats.items():
+                        if stat != "samples":
+                            usage.add_metric([r["url"], container, stat], value)
+            yield usage

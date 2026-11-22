@@ -19,6 +19,7 @@ services:
       -config api.key=${ZAP_API_KEY}
       -config api.addrs.addr.name=.*
       -config api.addrs.addr.regex=true
+    mem_limit: 8g  # guard; ZAP sizes its heap to 1/4 of host RAM by default (see docs/REPRODUCIBILITY.md)
     ports: ["127.0.0.1:8090:8090"]
     shm_size: 512m
 

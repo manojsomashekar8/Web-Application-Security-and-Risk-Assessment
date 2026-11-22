@@ -1,0 +1,5 @@
+{
+  "_comment": "Resource rules. min_mem_available_mb is refused before a scan starts; values are set from the measurements in docs/REPRODUCIBILITY.md (Task 7).",
+  "min_mem_available_mb": 6000,
+  "zap_memory_limit": "8g"
+}

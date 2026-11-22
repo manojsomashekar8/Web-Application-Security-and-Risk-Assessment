@@ -86,6 +86,8 @@ def api_scan(tid: int, body: dict | None = None):
         return {"scan_id": service.start_scan(tid, body.get("profile", "deep"), body.get("custom"))}
     except ValueError as exc:  # bad profile or custom field: nothing was started
         raise HTTPException(422, str(exc))
+    except service.ResourceError as exc:
+        raise HTTPException(507, str(exc))
 
 
 @app.get("/api/scans/{sid}", dependencies=[Depends(require_auth)])
@@ -158,6 +160,16 @@ async def scan_import(request: Request):
         raise HTTPException(422, str(exc))
     except service.DuplicateImport as exc:
         raise HTTPException(409, f"this scan was already imported ({exc})")
+
+
+@app.post("/api/scans/{sid}/usage", dependencies=[Depends(require_auth)])
+def scan_usage(sid: int, body: dict):
+    with db.connect() as conn:
+        n = conn.execute("UPDATE scans SET usage=%s::jsonb WHERE id=%s RETURNING id",
+                         (json.dumps(body), sid)).fetchone()
+    if n is None:
+        raise HTTPException(404, "no such scan")
+    return {"ok": True}
 
 
 @app.get("/api/scans/{sid}/report.json", dependencies=[Depends(require_auth)])
