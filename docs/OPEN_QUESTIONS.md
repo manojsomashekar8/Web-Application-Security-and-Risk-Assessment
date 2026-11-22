@@ -105,3 +105,13 @@ What is still unresolved, and what is needed to settle each item.
 - **Why the runner did not finish:** the runner stopped after scan 22 without writing its files and without an error in its log. The sampler's summary is missing for that scan only; the sampler saved summaries for scans 16 to 21. The exact stall is not known.
 - **Current state:** the stack was restarted with `docker compose up -d` (no data removed). The backend startup check marks interrupted scans as failed; none were running.
 - **Needed:** confirm whether to re-run bWAPP deep to get its usage numbers, and whether to keep the machine's load lower during scans.
+
+## Alert lookup bug in the scan path (found 2026-11-22, fixed in fe9b72d)
+
+- **What:** the scan path that the web app and the API use asked ZAP for alerts with the default port (`http://bwapp:80`). ZAP stores that host without the port, so the query returned only alerts on the start page. The same bug was fixed for the command-line path in an earlier change (D21), but not for the scan path. The fix is now in the shared client, `ZapClient.alerts()`.
+- **Who is affected (scans whose target uses a default port, run through the API):**
+  - DVWA: every API scan of `http://dvwa:80`, including scans 1 to 15 and the approved passive checks (scans 10, 14, 15). Their alert lists hold only start-page alerts. So the statement "plugin 10003 did not fire" from those checks is **not reliable**: it was checked on a start-page-only list.
+  - bWAPP: scans 20 to 23 (matrix quick, standard, deep, and the deep re-run). Scan 22 and the earlier deep bWAPP alerts are superseded.
+- **Not affected:** Juice Shop (port 3000) and WebGoat (port 8080), since neither uses a default port. The earlier 609-alert bWAPP run was made with the CLI path, which was already fixed.
+- **Corrected files:** bWAPP deep (`results/validation/bwapp/deep/raw_alerts.json`, 657 alerts over 94 URLs) was recovered from ZAP's current session. The bWAPP quick and standard runs were repeated with the fixed lookup. The old files are kept as `*_port_bug*` / `*-port-bug-superseded`.
+- **Needed:** decide whether the DVWA API scans 1 to 15 should be re-run. Default used: keep them, mark their alert lists as start-page only, and do not use them for plugin 10003 or for any claim about DVWA's pages.
