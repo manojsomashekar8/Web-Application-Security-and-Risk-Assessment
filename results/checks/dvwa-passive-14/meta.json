@@ -1,0 +1,22 @@
+{
+    "scan_id": 14,
+    "target": "http://dvwa:80",
+    "status": "done",
+    "zap_version": "2.16.1",
+    "started_at": "2026-11-22T09:42:35.402161+00:00",
+    "finished_at": "2026-11-22T09:42:51.815004+00:00",
+    "stage_seconds": {
+        "spider": 5.0,
+        "ajax_spider": 5.0,
+        "passive_wait": 0.0
+    },
+    "stage_urls_cumulative": {
+        "ajax": 61,
+        "traditional": 61
+    },
+    "raw_alerts": 4,
+    "alert_urls": 1,
+    "plugin_10003_alerts": 0,
+    "cve_text_alerts": 0,
+    "ajax_note": "AJAX spider stopped after 5 s with HtmlUnit proxy error HTTP/1.0 0; it added no URLs"
+}

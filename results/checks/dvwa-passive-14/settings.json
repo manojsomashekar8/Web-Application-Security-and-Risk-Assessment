@@ -1,0 +1,10 @@
+{
+ "active_scan": false,
+ "ajax_depth": 5,
+ "ajax_minutes": 3,
+ "ajax_spider": true,
+ "description": "Custom settings",
+ "profile": "custom",
+ "spider": "traditional",
+ "spider_minutes": 3
+}
