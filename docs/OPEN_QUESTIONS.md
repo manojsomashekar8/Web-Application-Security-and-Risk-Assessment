@@ -53,3 +53,9 @@ What is still unresolved, and what is needed to settle each item.
 - Default used: do not restart Docker or rerun the whole reproduce without your go-ahead, because a restart may be unwanted.
 - Needed: confirm whether Docker should be running. If yes, the default next step is `sudo systemctl start docker`, then `make up`, then the final scan and report steps (`make scan-juiceshop`, `make report`, `scripts/gen_reproducibility.py`).
 - The database backup from before the reproduce runs is at ~/backups/wasra-before-rescan.sql.
+
+## Unseen validation target (Task 3)
+
+- Now that DVWA is the target we tune and develop on, no validation target stays unseen unless bWAPP is kept apart.
+- Default used: bWAPP stays the unseen validation target. Nothing is tuned on it, and its scans are not used to choose settings.
+- Needed: confirm this default, or name another unseen target.
