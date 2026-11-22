@@ -64,7 +64,7 @@ All runs against http://dvwa:80 with DVWA reset before each scan, security level
 
 - Deep run 6 (same settings, before the profile code existed) took 689 s and found the same 16 findings.
 - Measured on the deep run (scan 13, with the usage sampler): ZAP CPU peaked at 865% of one core (average 281%); ZAP memory peaked at 12.8 GB (average 8.7 GB). The backend stayed under 52 MB.
-- Standard is about 2.5 times faster than deep here. It finds the same findings on DVWA, because DVWA's findings are reached by the spider and the Low-strength rules.
+- Standard took about 2.5 times less time than deep here and produced the same 16 findings. Why the same set is reached was not tested.
 - Quick is not a substitute for the others: it found 4 findings and sent no attacks.
 - The "vulnerability-class" count is the number of findings classified as vulnerability (ZAP-reported, not proven). It is not detection recall; see the validation tables for that.
 
