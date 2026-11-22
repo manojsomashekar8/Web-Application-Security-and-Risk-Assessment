@@ -253,11 +253,24 @@ Seven experiments (`make experiments`), each written as JSON and CSV in `results
 6. **Deduplication**: raw alerts against unique findings, per target.
 7. **Categories**: detection per vulnerability category.
 
-Precision = matching alerts / total alerts. Recall = known types detected / known types. Per-category recall is 1 or 0 because each app lists one class per category. Results are in docs/RESULTS.md.
+Precision = matching alerts / total alerts. Recall = known types detected / known types. A run that reaches fewer than 10 pages (ZAP's site tree after the spiders) shows **"Coverage too low"**, never 0.
 
-**Limits:** each validation target was scanned once; WebGoat's single-page app is barely reachable, so its numbers say nothing about detection; most ZAP findings have no CVE, so the framework's gain over the baselines comes mostly from context.
+**The validation matrix** (WebGoat and bWAPP, each with quick, standard and deep, one run each) is saved in the repository: `results/validation/`, with the table in [docs/RESULTS.md](docs/RESULTS.md). The main points:
 
----
+- bWAPP: quick takes 17 s, standard 5 min 48 s, deep 14 min 9 s. Quick finds 170 unique findings, standard and deep about 380. All three detect 1 of 8 known types. Standard's top 10 matches deep's (10 of 10).
+- WebGoat: all three profiles finish in under 5 minutes and reach 1 URL, so its results show "Coverage too low". The fixed AJAX browser runs but adds no pages.
+- Plugin 10003 (the Retire.js library check) did not fire in any of the six runs, so no CVSS, EPSS or KEV value is available for these targets. That is correct for them, not missing data.
+
+**A bug found during the matrix.** The alert lookup asked ZAP for alerts with the default port (`http://bwapp:80`). ZAP stores that host without the port, so only start-page alerts came back. The fix is in the shared client (decision D71). Earlier bWAPP and DVWA runs made through the API are superseded where listed in docs/OPEN_QUESTIONS.md.
+
+**Load the matrix into a fresh install:** `make load-validation` (see docs/HOW_TO_START.md).
+
+Results are summarised in [docs/RESULTS.md](docs/RESULTS.md). Current limits:
+
+- One run per profile and target. No variance.
+- Local lab applications only (WebGoat and bWAPP, inside the Docker network).
+- Most ZAP web findings have no CVE, so the framework's advantage over the baselines comes mostly from context.
+- Precision is low because most alerts are informational (missing headers and similar).
 
 ## 11. Safety rules
 
@@ -296,8 +309,9 @@ Then open http://127.0.0.1 (the app), http://127.0.0.1:3001 (Grafana), or http:/
 | The Client Spider is not active in the installed ZAP image | Confirm the Client Side Integration add-on loads, then compare it with the AJAX spider |
 | ZAP's report is per scan, not per finding | A per-finding ZAP report is not possible with this ZAP design |
 | Each validation target scanned once | Repeated runs, with variation reported |
-| WebGoat barely reachable (single-page app) | Seed the scanner from API endpoints, or report WebGoat as a coverage limit |
+| WebGoat reaches 1 URL in every profile, even with the fixed AJAX browser | Read ZAP's AJAX result list directly, or seed WebGoat's lesson routes; until then WebGoat is reported as "Coverage too low" |
 | Scans made before raw-alert storage cannot be re-scored or exported | Re-run them |
+| Earlier DVWA and bWAPP API scans returned start-page alerts only (alert lookup bug, fixed in D71) | Re-run the affected DVWA scans with approval; their plugin 10003 conclusions are unverified |
 | Memory: ZAP needs about 12.8 GB at peak; a container cap of 8 GB made scans fail | Measured limits are recorded in docs/REPRODUCIBILITY.md; no cap is set |
 | The browser test for downloads and the export/import round trip depend on a finished scan existing | Keep one scan in the reproduce run |
 | Literature list was written from memory | Verify each source and add DOIs before citing it (docs/LITERATURE.md) |

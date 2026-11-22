@@ -153,3 +153,11 @@ Found without scanning, from the running container, its log, and the stored scan
 **What I have not confirmed.** The exact trigger that closes the database is not known. The per-scan call `core/action/newSession` (overwrite) runs just before each spider; the log shows "New session file created: wasra.session" near each scan start. That correlation is not proof, because scan 13 also called it and its AJAX spider ran, and this is not yet tested.
 
 **Fix applied (D67).** The AJAX spider uses `firefox-headless` (`AJAX_BROWSER` in `src/collectors/zap_client.py`). Its result is checked by the URL count and the stage time of the next scan (scan 15). Client Spider: its API is not active in this container (see section 4), so it cannot be used here.
+
+
+## 10. Alert lookup and the AJAX browser (2026-11-22)
+
+- **Alert lookup.** ZAP stores hosts without default ports. The alert query must drop `:80` and `:443`, or it returns only the start page. The scan path was fixed in the shared client (`ZapClient.alerts`), with a regression test (`tests/test_zap_alerts_port.py`). Decision D71.
+- **AJAX browser.** The fixed browser is `firefox-headless`, ZAP's default. The HtmlUnit browser failed through ZAP's proxy in recent scans (`HTTP/1.0 0`), because the history database was closed. Decision D67. With Firefox, the AJAX stage runs its full time with no proxy errors.
+- **Site-tree size.** After each spider stage the number of URLs in ZAP's site tree is stored with the scan (`stage_urls`). This is the "pages reached" figure for the coverage rule.
+- **Version and image.** Each scan stores the ZAP version that ran it (`zap_version`). The image digest is in each matrix run's `meta.json` (`zaproxy/zap-stable:2.16.1@sha256:7840969c…`).

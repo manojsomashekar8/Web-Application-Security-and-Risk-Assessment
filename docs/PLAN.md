@@ -15,8 +15,10 @@ A checked box is done and committed. An unchecked box is not done. Notes say wha
 - [x] DVWA is the default target; it is reset before every scan
 - [x] Scans interrupted by a backend restart are marked failed at startup
 - [x] ZAP's own HTML report generated at the end of each scan and offered for download
+- [x] AJAX browser fixed: firefox-headless (D67)
 - [ ] Client Spider (not active in the installed image; see docs/OPEN_QUESTIONS.md)
 - [ ] Scans started from the web app are not sampled for CPU and memory (only `scripts/sample_usage.py` is)
+- [x] Alert lookup bug fixed for every scan path (D71)
 
 ## Phase 3: Cleaning, classification, enrichment
 - [x] One common finding format with CWE and OWASP mapping
@@ -49,6 +51,7 @@ A checked box is done and committed. An unchecked box is not done. Notes say wha
 - [x] Coverage threshold (10 pages); WebGoat shows "Coverage too low", never 0
 - [x] Experiments 1 to 7, each as JSON and CSV
 - [x] Timed runs and the profile comparison on DVWA (docs/RESULTS.md)
+- [x] Validation matrix: WebGoat and bWAPP, every profile, one run each (docs/RESULTS.md)
 - [ ] Repeated runs per target (each target was run once)
 
 ## Phase 8: Resources
