@@ -70,3 +70,9 @@ sequenceDiagram
 - Every published port is bound to `127.0.0.1`. `make up` refuses public ports in `AUTH_MODE=none`.
 - Scan requests accept only the fields in `src/scanprofile.py`. Imports accept only the format in `src/importexport.py`.
 - Credentials are in `.env`, not in git. Practice-site logins are the apps' public defaults and stay inside the Docker network.
+
+## Validation matrix (2026-11-22)
+
+- `scripts/validation_matrix.py` runs each profile once for a target and saves `results/validation/<target>/<profile>/` (raw alerts, settings, meta with ZAP version, image digest, stage times, site-tree counts, CPU and memory).
+- `scripts/validation_summary.py` computes the summary (`results/validation/summary.json`, `summary.csv`) and, with `--store`, refreshes the dashboard rows in `validation_results` and `validation_categories`.
+- `scripts/validation_exports.py` writes the same runs as versioned exports (`results/exports/validation/`), which `make load-validation` imports through the normal import path.

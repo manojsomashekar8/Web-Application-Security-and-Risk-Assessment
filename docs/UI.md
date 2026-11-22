@@ -72,3 +72,8 @@ Open http://127.0.0.1:3001, then **WASRA validation**.
 **Status panel.** On the targets page: Postgres, ZAP version, feed snapshot age.
 
 **Errors.** 422: a scan request or an import file failed a check (the message names the field). 507: free memory is below 14 GB. 409: duplicate target, an export of a scan with no stored raw alerts, or a second import of the same file.
+
+## Validation data in the app (2026-11-22)
+
+- After `make load-validation`, the scan list shows the WebGoat and bWAPP matrix runs (quick, standard, deep), with their settings and stage timings.
+- The validation dashboard shows the latest run per target by default. WebGoat shows "Coverage too low" in precision and recall, and in the category panel. bWAPP shows its numbers (1 of 8 known types, precision about 4%).

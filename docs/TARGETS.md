@@ -28,3 +28,8 @@ Add a line in the same format. Only add sites you own or have written permission
 - **WebGoat** (`http://webgoat:8080/WebGoat/`, image `webgoat/webgoat:v2026.5`): the login helper registers the account `wasrascan` (password set in code, public lab value) and logs in before each scan. Login is confirmed by the logout link on `/WebGoat/start.mvc`. Lessons are a single-page app. Business ratings used for scans: High for all four.
 - **bWAPP** (`http://bwapp:80`, image `raesene/bwapp:latest` pinned by digest): the database is installed. The login helper logs in as the public lab user `bee` with `security_level=0` (low). Login is confirmed by the logout link on `/portal.php`. Business ratings: High for all four.
 - Both are validation targets. Nothing is tuned on their results.
+
+## Matrix results
+
+- WebGoat and bWAPP: every profile was run once. Files: `results/validation/webgoat/` and `results/validation/bwapp/`. Table and notes: docs/RESULTS.md.
+- DVWA: not part of the matrix. Its earlier API scans have start-page-only alert lists (see docs/OPEN_QUESTIONS.md).

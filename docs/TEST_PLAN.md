@@ -53,3 +53,10 @@ This page says what is tested, how, and what is not tested. It is for someone wh
 - Last full `make reproduce` (attempt 10): 134 unit and browser tests passed, then 12 more in the e2e stage, then 17 integration tests passed. The flow test runs a real DVWA scan and takes about 10 to 13 minutes.
 - New areas covered: scan profile validation (17 cases); API scan requests refused before anything starts; finding reports escape scanner text; CSV guards against spreadsheet formulas and keeps blank cells blank; import validation (format version, corrupt JSON, oversize file, malformed alerts, bad profile, bad rating, content hash); round trip and duplicate refusal (integration); results sorting (browser); DVWA flow (browser); Grafana validation panels and the one-row-per-target filter (browser).
 - `install.sh` is linted by shellcheck when it is installed. It was not installed on the test host, so it was not linted there.
+
+## Matrix and fixes (2026-11-22)
+
+- New unit tests: `test_zap_alerts_port.py` (the alert lookup drops default ports, keeps others); `test_importexport.py` (an empty alert list is a valid result); `test_scanprofile.py` (the custom spider choice runs the spider it names).
+- The validation matrix is data, not a test: `scripts/validation_summary.py` recomputes every figure in docs/RESULTS.md from `results/validation/` and checks the coverage rule. Run it after any change to the scoring or the detection code.
+- Unit tests with the stack down: 108 pass.
+- Integration and browser tests are unchanged; the matrix does not add scans to them.
