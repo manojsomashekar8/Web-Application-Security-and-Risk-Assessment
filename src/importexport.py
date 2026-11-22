@@ -51,7 +51,8 @@ def validate(data: dict) -> dict:
     s = data.get("scan")
     _require(isinstance(s, dict), "scan: missing or not an object")
     profile = s.get("profile")
-    _require(profile in PROFILES or profile == "custom", f"scan.profile: unknown profile {profile!r}")
+    # "unrecorded": the scan's settings were not saved (a raw alert file re-imported). Stored as such, never guessed.
+    _require(profile in PROFILES or profile in ("custom", "unrecorded"), f"scan.profile: unknown profile {profile!r}")
     settings = s.get("settings")
     _require(isinstance(settings, dict), "scan.settings: must be an object")
     clean_settings = validate_custom({k: v for k, v in settings.items() if k in FIELDS}) if profile == "custom" else {}

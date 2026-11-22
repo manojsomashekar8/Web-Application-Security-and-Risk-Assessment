@@ -248,7 +248,10 @@ def import_scan(raw: bytes) -> int:
     if errors:  # the allowlist still applies to imported targets
         raise importexport.ImportError_("; ".join(errors))
     digest = importexport.content_hash(data)
-    settings = resolve(v["profile"], v["settings"] if v["profile"] == "custom" else None)
+    if v["profile"] == "unrecorded":
+        settings = {"profile": "unrecorded", "description": "Settings were not recorded for this scan (re-imported raw alerts)."}
+    else:
+        settings = resolve(v["profile"], v["settings"] if v["profile"] == "custom" else None)
     ctx = {k: t[k] for k in CONTEXT_FIELDS}
     rows, overlap = scan_rows(v["alerts"], ctx)  # recomputed from the raw alerts; stored scores are ignored
     with db.connect() as conn:
