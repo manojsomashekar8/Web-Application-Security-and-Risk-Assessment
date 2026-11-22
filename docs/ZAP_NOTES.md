@@ -127,8 +127,8 @@ Each call below returned `{"Result":"OK"}` in the running container. Values were
 | `spider/action/excludeFromScan` and `ascan/action/excludeFromScan` | `regex` | Exclude URLs from the spider or the active scan |
 | `spider/view/excludedFromScan` and `ascan/view/excludedFromScan` | — | List the current exclusions |
 | `spider/action/clearExcludedFromScan` and `ascan/action/clearExcludedFromScan` | — | Clear **all** exclusions (no per-item removal exists) |
-| `ascan/action/setScannerEnabled` | `ids`, `enabled` | Enable or disable a scanner (not confirmed yet; `ids=10045` returned `bad_action` with the name we tried first) |
+| `ascan/action/disableScanners` and `ascan/action/enableScanners` | `ids` (comma list), `scanPolicyName` | Disable or enable scanners in a policy (verified; the singular `setScannerEnabled` does not exist) |
 
 **Mistake found and fixed:** while testing, an exclusion for `http://dvwa:80/logout.*` was added to both lists during DVWA scan 6. It was cleared about a minute later with the clear calls above. Both lists were verified empty afterwards. The effect on scan 6 is not measured; see docs/OPEN_QUESTIONS.md.
 
-**Still to verify before use:** the scanner-enable call name (`ascan/action/setScannerEnabled` is not the right name in this version).
+
