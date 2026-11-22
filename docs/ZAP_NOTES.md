@@ -132,3 +132,24 @@ Each call below returned `{"Result":"OK"}` in the running container. Values were
 **Mistake found and fixed:** while testing, an exclusion for `http://dvwa:80/logout.*` was added to both lists during DVWA scan 6. It was cleared about a minute later with the clear calls above. Both lists were verified empty afterwards. The effect on scan 6 is not measured; see docs/OPEN_QUESTIONS.md.
 
 
+
+## 9. AJAX spider failure: diagnosis (2026-11-22)
+
+Found without scanning, from the running container, its log, and the stored scans.
+
+**Proxy.** The AJAX spider's browser is not given an explicit proxy in our code. ZAP starts its own local servers for each browser: the container listens on several ephemeral ports besides the API port 8090 (read from `/proc/net/tcp`). No proxy variables are set in the container (`env | grep -i proxy` is empty).
+
+**Reachability.** From inside the ZAP container, `dvwa` resolves to 172.19.0.3 (Docker DNS, `127.0.0.11`), and `http://dvwa:80/` returns HTTP 200. So the name and the port are not the problem.
+
+**Browser.** The AJAX spider was set to `htmlunit` (our choice in D53). The container also has Firefox (`/usr/bin/firefox`) and the Selenium WebDriver add-ons. `firefox-headless` is ZAP's default.
+
+**What fails.** HtmlUnit's request goes through ZAP's local server, and the message handlers run on each response. The log shows:
+- `ERROR ... ExtensionSelenium - ClientProtocolException`, then `Caused by: ProtocolException: Invalid response: HTTP/1.0 0`. The browser got no valid HTTP response.
+- The stack trace goes through `MainServerHandler.notifyMessageHandlers` into `DomXssScanRule` (ZAP's DOM XSS add-on), which calls `AbstractPlugin.sendAndReceive` and `ParosTableHistory.write`.
+- The root exception is `org.parosproxy.paros.db.DatabaseException: java.sql.SQLNonTransientConnectionException: connection exception: closed` (HSQLDB). ZAP's history database is closed when the handler tries to write, so the handler throws and no response is sent.
+
+**When it fails.** A stored scan's AJAX spider stage takes about 5 seconds when it fails, and about 135 to 145 seconds when it runs. Recent scans (9 deep scans from the reproduce runs, scan 13, and scan 14) all took about 5 seconds, so the AJAX spider failed in nearly every one of them. Scan 6 (135 s) and the Juice Shop timed run (145 s) show it worked earlier.
+
+**What I have not confirmed.** The exact trigger that closes the database is not known. The per-scan call `core/action/newSession` (overwrite) runs just before each spider; the log shows "New session file created: wasra.session" near each scan start. That correlation is not proof, because scan 13 also called it and its AJAX spider ran, and this is not yet tested.
+
+**Fix applied (D67).** The AJAX spider uses `firefox-headless` (`AJAX_BROWSER` in `src/collectors/zap_client.py`). Its result is checked by the URL count and the stage time of the next scan (scan 15). Client Spider: its API is not active in this container (see section 4), so it cannot be used here.
