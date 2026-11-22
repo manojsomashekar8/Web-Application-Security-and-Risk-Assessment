@@ -31,15 +31,20 @@ We do not invent CVSS values. CVSS belongs to a CVE, and most ZAP web findings (
 | 2 | The score's severity source is not visible in the table | Fixed in the expanded row: "Severity used (S)" shows `0.50 (ZAP risk Medium)` or `(CVSS x.x)`. CWE and OWASP are shown there too. The table itself still omits CWE and OWASP (not done) |
 | 3 | KEV printed "no" for findings with no CVE, which implies the KEV list was checked | Fixed: KEV is n/a when no CVE is mapped (decision D54). The test was updated |
 | 4 | Twelve "User Agent Fuzzer" rows look identical in the table | Not changed. They are separate alerts with different parameters or attacks, so grouping keeps them apart by design (D25). The table should show the parameter column; not done yet |
-| 5 | Every scan uses the same settings; the user cannot choose a profile | Planned (Task 1). Profile validation is written and tested; the UI is not |
-| 6 | The Juice Shop and DVWA results pages show no scan settings or timings | Planned (Tasks 1 and 7) |
-| 7 | The table sorts only by rank; other columns are not sortable | Planned (Task 2) |
-| 8 | There is no per-finding download | Planned (Task 2) |
-| 9 | The results page reads "Re-score" and "Download JSON report", but there is no HTML download | Planned (Task 2) |
-| 10 | The target page does not show DVWA's security level | Planned (Task 3) |
+| 5 | Every scan uses the same settings; the user cannot choose a profile | Done: profile selector and custom form (with server-side bounds) |
+| 6 | Results pages show no scan settings or timings | Done: settings and stage durations at the top of the results page |
+| 7 | The table sorts only by rank; other columns are not sortable | Done: every column sorts |
+| 8 | There is no per-finding download | Done: HTML and JSON per finding, from our backend |
+| 9 | No HTML download | Done: full-scan HTML, and ZAP's own HTML report for each scan |
+| 10 | The target page does not show DVWA's security level | Done in docs/TARGETS.md (low, reset before each scan); not yet shown on the page itself |
 
 ## Layout notes
 
 - The results table is wide (11 columns). It scrolls sideways inside its box on a phone (checked earlier, no page-level scroll).
 - Headers for the three CVE columns wrap onto three lines. Acceptable, but a shorter label ("CVE data") would read faster.
 - The class and band filters are above the table, and the counts they show match the table.
+
+
+## Status after the changes
+
+Every problem in the table above is addressed, except item 10 (the page does not show DVWA's level; the level is documented and set by the login helper). The ZAP report is a per-scan download, not a per-finding one (ZAP makes its report for the whole session).

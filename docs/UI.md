@@ -1,4 +1,4 @@
-# User interface guide
+# User interface guide (final state)
 
 The main interface is the React app at http://127.0.0.1 (port 80). The original server-rendered pages are on port 8080 and are kept as a fallback.
 
@@ -57,3 +57,18 @@ Open http://127.0.0.1:3001, then **WASRA validation**.
 - **Recall by category**: for each known vulnerability category of each app, Detected or Missed. "Coverage too low" when the run did not reach enough pages.
 - **Recall by target**: the same recall as a bar chart. Blank bars mean coverage too low.
 - The note panel explains why precision is low: most ZAP alerts are informational (headers, cookie flags, version leaks) and do not match a known vulnerability type.
+
+
+## Final additions (2026-11-22)
+
+**Profiles.** The target page has a profile selector: quick, standard, deep or custom. Custom shows the bounded fields (spider, active scan, strength, threshold, threads, delay, time limits, excluded URLs, rule ids to disable). The server validates every field; a bad value gives a clear 422 and no scan starts.
+
+**Scan settings and timings.** The results page starts with the settings the scan used and the time each stage took. Scans from before profiles existed show "not recorded".
+
+**Results table.** Every column header sorts; default is framework risk, highest first. Ties keep the stored order. Missing values are "n/a"; hover for the reason (for CVE-based columns).
+
+**Downloads.** Scan header: ZAP report (HTML, made by ZAP when the scan finished, shown only when one was stored), full report (HTML and JSON), findings (CSV). Each finding row: HTML and JSON reports from our backend. A download uses the login header, so it works in `AUTH_MODE=basic`.
+
+**Status panel.** On the targets page: Postgres, ZAP version, feed snapshot age.
+
+**Errors.** 422: a scan request or an import file failed a check (the message names the field). 507: free memory is below 14 GB. 409: duplicate target, an export of a scan with no stored raw alerts, or a second import of the same file.

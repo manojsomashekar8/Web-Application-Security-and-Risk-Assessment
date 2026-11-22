@@ -1,4 +1,4 @@
-# Test plan
+# Test plan (final state)
 
 This page says what is tested, how, and what is not tested. It is for someone who wants to check that the project does what it claims.
 
@@ -45,3 +45,11 @@ This page says what is tested, how, and what is not tested. It is for someone wh
 1. Put a unit test in `tests/` if it can run offline.
 2. Use `WASRA_E2E=1` for anything that needs the browser or the running stack.
 3. Keep each test about one rule, and name it after the rule.
+
+
+## Final state (2026-11-22)
+
+- Offline unit tests: 105 pass with the stack down. Browser and integration tests are skipped unless `WASRA_E2E=1` and `WASRA_INTEGRATION=1` are set.
+- Last full `make reproduce` (attempt 10): 134 unit and browser tests passed, then 12 more in the e2e stage, then 17 integration tests passed. The flow test runs a real DVWA scan and takes about 10 to 13 minutes.
+- New areas covered: scan profile validation (17 cases); API scan requests refused before anything starts; finding reports escape scanner text; CSV guards against spreadsheet formulas and keeps blank cells blank; import validation (format version, corrupt JSON, oversize file, malformed alerts, bad profile, bad rating, content hash); round trip and duplicate refusal (integration); results sorting (browser); DVWA flow (browser); Grafana validation panels and the one-row-per-target filter (browser).
+- `install.sh` is linted by shellcheck when it is installed. It was not installed on the test host, so it was not linted there.

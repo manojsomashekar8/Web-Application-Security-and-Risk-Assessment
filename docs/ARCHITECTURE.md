@@ -1,71 +1,72 @@
 # How the system fits together
 
-This page explains the parts of the system and how they talk to each other. You do not need to read the code to follow it.
+This page lists the parts and how they talk. It describes the code as it is now.
 
 ## The parts
 
 | Part | Where it lives | What it does |
 |---|---|---|
-| **React frontend** | `frontend/`, port 80 | The main interface: targets, new target, target detail, scan results with filters and explanations. Served by nginx |
-| **Original web pages** | `src/web/`, port 8080 | The first server-rendered pages. Kept as a fallback |
-| **Web API** | `src/api/app.py` | The same actions as the web app, for scripts |
-| **Command line** | `src/cli.py` | The same actions from the terminal |
-| **Services** | `src/service.py` | The rules: check the target is allowed, store records, run one scan at a time |
-| **Scanner client** | `src/collectors/zap_client.py` | Tells the OWASP ZAP scanner what to do and collects the results |
-| **Logins for practice sites** | `src/collectors/auth.py` | Logs in to the practice websites so the scanner can see the pages behind the login |
-| **Clean-up** | `src/normalize/` | Turns the scanner's raw output into one common format |
-| **Triage** | `src/triage.py` | Labels each alert (vulnerability, potential, informational, excluded) and merges repeated alerts |
-| **Adding facts** | `src/enrich/` | Adds severity and exploit data from saved copies of public lists |
-| **Scoring** | `src/scoring/` | Computes the risk score and the comparison scores (see [Scoring](SCORING.md)) |
-| **Pipeline** | `src/pipeline.py` | Runs clean-up, adding facts, scoring and ranking in order. The web app, command line and experiments all use this |
-| **Database** | `db/`, `src/db.py` | PostgreSQL stores targets, scans and findings |
-| **Metrics** | `src/metrics/exporter.py` | Publishes numbers that Prometheus can read |
-| **Dashboards** | `grafana/`, port 3001 | Charts and alerts, built from the metrics and the database |
-| **Experiments** | `src/experiments/run.py` | Five experiments that compare the scoring methods, run from saved scan results |
+| React app | `frontend/`, port 80 | Targets, profiles, scan results, downloads, status panel. Built with Vite, served by nginx, which forwards `/api` |
+| Original pages | `src/web/`, port 8080 | Server-rendered fallback pages |
+| JSON API | `src/api/app.py` | Targets, scans, profiles, re-score, downloads, export and import, health |
+| Rules | `src/service.py` | Allowlist, targets, scan start (memory check, profile validation), re-score, export, import |
+| Scan profiles | `src/scanprofile.py`, `configs/scan_profiles.json` | Named profiles and validated custom settings |
+| Scanner client | `src/collectors/zap_client.py` | Applies the profile to ZAP, runs spiders, passive wait, active scan, alerts, the ZAP HTML report |
+| Logins and DVWA reset | `src/collectors/auth.py` | Logs in to the practice sites; resets DVWA before each scan |
+| Clean-up | `src/normalize/` | One finding format with CWE and OWASP mapping |
+| Triage | `src/triage.py` | Classification and grouping by fingerprint |
+| Enrichment | `src/enrich/` | CVSS, EPSS, KEV from saved feeds, with provenance and n/a handling |
+| Scoring | `src/scoring/` | Risk score, comparison scores, explanation, comparison metrics |
+| Pipeline | `src/pipeline.py` | Clean-up, triage, enrichment, scoring and ranking, in that order |
+| Reports | `src/report/` | Per-finding and full-scan HTML and JSON, with escaping |
+| Import and export | `src/importexport.py` | Versioned format, validation, recomputed scores |
+| Health | `src/health.py` | Postgres, ZAP and feed freshness |
+| Database | `db/migrations/` (001 to 011), `src/db.py` | PostgreSQL; applied at backend startup. Read-only role for Grafana |
+| Metrics | `src/metrics/exporter.py` | Prometheus collector, read from the database on each scrape |
+| Dashboards | `grafana/` | Provisioned from files |
+| Experiments | `src/experiments/run.py` | Experiments 1 to 7, JSON and CSV |
+| Scripts | `scripts/` | export_scan, import_scan, sample_usage, check_bindings, gen_reproducibility |
 
-## How data flows
+## Data flow
 
 ```mermaid
 flowchart LR
-    you([You]) -->|web app, port 8080| web[Web app and API]
+    you([You]) -->|React app, port 80| web[API]
     web --> svc[Rules and pipeline]
-    svc -->|asks to scan| zap[(ZAP scanner)]
-    zap -->|visits| targets[[Practice websites]]
-    svc --> db[(Database)]
+    svc -->|REST| zap[(ZAP)]
+    zap -->|visits| sites[[Practice sites]]
+    svc --> db[(PostgreSQL)]
+    zap -->|HTML report| reports[(results/zap-reports)]
     web -->|metrics| prom[(Prometheus)]
-    prom --> graf[Dashboards, port 3001]
+    prom --> graf[Grafana]
     db -->|read-only| graf
 ```
 
-In plain words:
-- You use the web app to add a target and start a scan. Only the web app can start scans.
-- The web app asks the scanner to visit the website, then saves the results in the database.
-- Dashboards only read data. They cannot change anything or start scans.
-- The scanner is only ever contacted by the web app, never directly by you or the dashboards.
+Only the backend talks to ZAP. The dashboards only read. ZAP writes its HTML report to a folder that the backend also reads.
 
-## What happens during one scan
+## One scan
 
 ```mermaid
 sequenceDiagram
-    participant You
-    participant App as Web app
-    participant ZAP as Scanner
-    participant Site as Practice website
-    You->>App: Start scan
-    App->>App: Check the site is on the allowed list
-    App->>Site: Log in (for sites that need it)
-    App->>ZAP: Start a fresh session
-    ZAP->>Site: Visit every link it can find
-    ZAP->>Site: Run the attack checks
-    App->>ZAP: Collect the warnings
-    App->>App: Clean up, add facts, score, rank
-    App->>App: Save the findings
-    You->>App: Open the ranked list
+    participant U as You
+    participant B as Backend
+    participant Z as ZAP
+    participant T as Site
+    U->>B: start scan (profile or custom)
+    B->>B: validate settings; check allowlist; check free memory
+    B->>T: log in (DVWA: reset first)
+    B->>Z: new session; apply settings
+    B->>Z: spiders (as the profile says); passive wait; active scan
+    Z->>T: crawl and attack
+    B->>Z: read alerts (paged); generate HTML report
+    B->>B: normalize, triage, enrich, score, rank
+    B->>B: store findings, settings, timings, raw alerts, report name
+    U->>B: open results
 ```
 
-## Safety rules
+## Safety boundaries
 
-- A scan only runs against sites listed in [TARGETS.md](TARGETS.md). The server checks this, not the browser.
-- All services only accept connections from your own computer.
-- Login details live in `.env`, which is not stored in git.
-- The practice-site logins are the public default accounts of those apps, and they are only used inside the Docker network.
+- The allowlist (`docs/TARGETS.md`) is checked on the server for every scan and every import.
+- Every published port is bound to `127.0.0.1`. `make up` refuses public ports in `AUTH_MODE=none`.
+- Scan requests accept only the fields in `src/scanprofile.py`. Imports accept only the format in `src/importexport.py`.
+- Credentials are in `.env`, not in git. Practice-site logins are the apps' public defaults and stay inside the Docker network.
