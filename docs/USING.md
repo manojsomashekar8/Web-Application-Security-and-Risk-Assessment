@@ -119,7 +119,7 @@ Most users never need to touch these. Edit them, then run `make up` (or restart 
 | `configs/scan_profiles.json` | The four profiles above | as shown in section 2 |
 | `configs/resources.json` | `min_mem_available_mb`: scans refuse to start below this free memory | 14000 (MB) |
 | `configs/validation.json` | `min_pages`: a validation run below this many pages shows "Coverage too low" | 10 |
-| `configs/weights.json` | Weights of the weighted-sum comparison score (not the main score) | equal-spec defaults |
+| `configs/weights.json` | Weights of the weighted-sum comparison score (not the main score) | severity 0.4, exploitability 0.3, context 0.3 |
 | `configs/context_presets.json` | Default ratings used by the experiments | all Medium |
 | `configs/cve_map.json` | ZAP plugin id to CVE mapping, for CVSS, EPSS and KEV | empty (no CVEs yet) |
 | `docs/TARGETS.md` | Which sites may be scanned | DVWA, Juice Shop, WebGoat, bWAPP |
