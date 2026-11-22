@@ -69,3 +69,11 @@ All runs against http://dvwa:80 with DVWA reset before each scan, security level
 - The "vulnerability-class" count is the number of findings classified as vulnerability (ZAP-reported, not proven). It is not detection recall; see the validation tables for that.
 
 Earlier failures, kept as history: scans 10 and 11 failed while ZAP was restarting; scan 12 failed after the 8 GB memory cap was applied to ZAP (ZAP reached 7.8 GiB of 8 GiB and timed out). See decision D57.
+
+## Plugin 10003 check on DVWA (2026-11-22): did not fire
+
+- Scan 10, profile **quick** (traditional spider with a 2-minute cap, passive checks only, no attacks), target `http://dvwa:80`.
+- ZAP version: **2.16.1**. Settings: stored with the scan and saved in `results/checks/dvwa-quick-10003/settings.json`. Raw alerts: `results/checks/dvwa-quick-10003/raw_alerts.json` (4 alerts). Run metadata: `meta.json`.
+- Result: 4 alerts (Missing Anti-clickjacking Header, CSP Header Not Set, Server Leaks Version Information, X-Content-Type-Options Header Missing). **Plugin 10003 (Vulnerable JS Library, Retire.js) did not fire.** The spider ran for 5 s and visited only a few pages.
+- What this shows: the quick profile does not reach the pages where a library would be loaded, so this run cannot tell whether DVWA serves an old library. It does not prove that DVWA is free of one.
+- Consequence: no CVE mapping was added. CVSS, EPSS and KEV stay n/a for every finding, and the n/a reason stays visible (see docs/DECISIONS.md, D61).
