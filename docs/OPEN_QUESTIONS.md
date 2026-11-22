@@ -115,3 +115,17 @@ What is still unresolved, and what is needed to settle each item.
 - **Not affected:** Juice Shop (port 3000) and WebGoat (port 8080), since neither uses a default port. The earlier 609-alert bWAPP run was made with the CLI path, which was already fixed.
 - **Corrected files:** bWAPP deep (`results/validation/bwapp/deep/raw_alerts.json`, 657 alerts over 94 URLs) was recovered from ZAP's current session. The bWAPP quick and standard runs were repeated with the fixed lookup. The old files are kept as `*_port_bug*` / `*-port-bug-superseded`.
 - **Needed:** decide whether the DVWA API scans 1 to 15 should be re-run. Default used: keep them, mark their alert lists as start-page only, and do not use them for plugin 10003 or for any claim about DVWA's pages.
+
+## Superseded results (validation matrix, 2026-11-22)
+
+- **bWAPP quick, standard (scans 20, 21, 24, 25) and bWAPP deep (scan 22, and its first recovery):** alert lists were limited to start-page alerts by the default-port bug. The corrected runs are `results/validation/bwapp/{quick,standard,deep}`. The old files are kept under `*-port-bug-superseded` and `raw_alerts_port_bug.json`.
+- **DVWA API scans (1 to 15, including the passive checks 10, 14, 15) and the plugin 10003 conclusions drawn from them:** their alert lists are start-page only. Treat any "plugin 10003 did not fire" from those scans as unverified. The DVWA CLI-based results (`results/raw/dvwa_alerts.json`, 775 alerts) are not affected.
+- **WebGoat "2 pages" (earlier):** the matrix finds 1 URL in every profile, including with the fixed AJAX browser. The earlier figure is superseded by the matrix figure. The cause of WebGoat's low coverage is not yet found.
+- **bWAPP earlier 609-alert run (`results/raw/bwapp_alerts.json`):** still valid as a CLI run; its detection (1 of 8) agrees with the matrix.
+
+## Still open after the matrix
+
+- WebGoat coverage: the browser runs but finds no new pages. Next step: read ZAP's AJAX result list directly, or seed WebGoat's lesson routes.
+- Library-based CVE values: no library finding exists in these targets (plugin 10003 did not fire). Needs a target that loads an old library, and your approval to add it.
+- DVWA API scans: re-run after the fix if their numbers are to be used (needs approval).
+- Literature list: still written from memory; each source to be checked before it is cited.

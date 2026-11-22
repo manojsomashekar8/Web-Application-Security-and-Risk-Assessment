@@ -94,3 +94,24 @@ Earlier failures, kept as history: scans 10 and 11 failed while ZAP was restarti
 - URLs in ZAP's site tree after each spider (cumulative): traditional **63**, after AJAX **63**. The AJAX stage added no URLs to the tree. Whether it found pages already in the tree or found none is not settled: ZAP's AJAX result list did not parse into a URL count.
 - Alerts: 4, all on the start page. **Plugin 10003 did not fire.** No alert text contains a CVE id.
 - Result: no CVE mapping. CVSS, EPSS and KEV stay n/a (D61, D68).
+
+## Validation matrix: WebGoat and bWAPP, every profile (2026-11-22)
+
+Every run: ZAP 2.16.1 (image digest in each run's `meta.json`), the fixed AJAX browser (firefox-headless), one run at a time, no run aborted. Files: `results/validation/<target>/<profile>/` and the summary `results/validation/summary.json` (made by `scripts/validation_summary.py`). Each run is also an export in `results/exports/validation/` (loaded by `make load-validation`).
+
+| Target | Profile | Total time | Active scan time | URLs found (site tree after traditional spider) | Unique findings | Types detected | Top-10 overlap with deep | Peak ZAP memory |
+|---|---|---|---|---|---|---|---|---|
+| WebGoat | quick | 9 s | — | 1 | 0 | 0 of 7 (coverage too low) | n/a (no findings) | 3.8 GB |
+| WebGoat | standard | 4 min 37 s | 35 s | 1 | 13 | 0 of 7 (coverage too low) | 10 of 10 | 4.3 GB |
+| WebGoat | deep | 4 min 6 s | 40 s | 1 | 13 | 0 of 7 (coverage too low) | reference | 4.4 GB |
+| bWAPP | quick | 17 s | — | 68 | 170 | 1 of 8 | 8 of 10 | 3.2 GB |
+| bWAPP | standard | 5 min 48 s | 3 min 30 s | 68 (70 after AJAX) | 383 | 1 of 8 | 10 of 10 | 11.6 GB |
+| bWAPP | deep | 14 min 9 s | 11 min 15 s | 68 (70 after AJAX) | 381 | 1 of 8 | reference | 15.0 GB |
+
+Notes:
+
+- **Time saved and what is lost (bWAPP).** Quick takes 17 s against 14 min 9 s for deep, about 50 times faster. It finds 170 findings against 381 and has no active scan, so it sends no attacks. Standard takes about 41% of deep's time and keeps the same detected type (1 of 8) and the same top 10 (10 of 10). Neither profile finds more known types than deep. On WebGoat, all three profiles finish in under 5 minutes, and none reaches the coverage threshold.
+- **WebGoat coverage.** The fixed AJAX browser did not widen WebGoat's coverage. The browser ran (about 3 minutes in both standard and deep) with no proxy errors, but the site tree stayed at 1 URL. The earlier figure was 2 pages, so the result is no better. WebGoat's pages are reached only through its JavaScript routes, and the AJAX run did not add them. Its precision and recall are shown as "Coverage too low", never as 0.
+- **Plugin 10003 (Retire.js).** It did not fire in any of the six runs (0 alerts), and no alert text contains a CVE id. For CVSS this means no library-based finding exists in these runs, so CVSS, EPSS and KEV stay n/a for every finding. The n/a is correct for these targets, not missing data. A library check would need a target whose pages load an old library.
+- **Detection and precision.** bWAPP detects 1 of 8 known types in every profile (the same as the earlier 609-alert run), and precision is 4% (matching alerts / total alerts), because most alerts are informational.
+- **Limits.** One run per profile, so no variance. Local lab applications only (WebGoat and bWAPP, inside the Docker network). The memory figures are from one machine and one run each. Earlier bWAPP and DVWA API runs used the default-port alert lookup and are superseded (see docs/OPEN_QUESTIONS.md). bWAPP deep's CPU and memory summary (scan 23) was recorded with the old run; its files are rebuilt from ZAP's session.
