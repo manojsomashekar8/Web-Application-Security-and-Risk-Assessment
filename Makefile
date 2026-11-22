@@ -27,6 +27,7 @@ down:  ## stop the stack
 
 test:  ## unit tests (offline); with the stack up, also integration and e2e
 	$(PY) -m pytest -q tests --cov=src/normalize --cov=src/scoring --cov=src/enrich --cov-report=term-missing
+	@if command -v shellcheck >/dev/null; then shellcheck install.sh; else echo "shellcheck not installed: install.sh not linted"; fi
 	@if [ "$(WASRA_INTEGRATION)" = 1 ]; then WASRA_INTEGRATION=1 $(PY) -m pytest -q tests/integration; fi
 	@if [ "$(WASRA_E2E)" = 1 ]; then WASRA_E2E=1 $(PY) -m pytest -q tests/e2e; fi
 
