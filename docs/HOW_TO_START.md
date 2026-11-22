@@ -89,7 +89,15 @@ python scripts/import_scan.py FILE.json        # creates a new scan from the fil
 
 The file has `format` `wasra-scan` and `format_version` 1. Imports reject other versions, files over 25 MB, and malformed data with a message. Scores are recomputed on import, never trusted from the file. Importing the same file twice is refused.
 
-## Step 5: Build the results tables
+## Step 5: Load the validation matrix
+
+```
+make load-validation
+```
+
+This imports the saved WebGoat and bWAPP runs (every profile) into the scan list, and refreshes the validation dashboard. It scans nothing, and it recomputes every score. Running it twice is safe: duplicates are refused.
+
+## Step 6: Build the results tables
 
 ```
 make experiments

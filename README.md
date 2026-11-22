@@ -31,9 +31,14 @@ Then open http://127.0.0.1 (the app). Dashboards are at http://127.0.0.1:3001.
 | `make down` | stop everything (keeps data) |
 | `make scan-dvwa` | scan DVWA through the API (the default target) |
 | `make experiments` | rebuild the experiment tables (JSON and CSV) |
+| `make load-validation` | load the saved WebGoat and bWAPP validation matrix (scans, summary and dashboard rows) into a fresh database |
 | `make test` | offline tests; with the stack up, `WASRA_INTEGRATION=1 WASRA_E2E=1 make test` runs the rest |
 | `make reproduce` | full clean run. Deletes the database first, so back it up |
 | `./install.sh --check` | report what is missing on a host, change nothing |
+
+## Validation matrix
+
+The matrix (WebGoat and bWAPP, each with quick, standard and deep) is saved in the repository: raw alerts, settings, ZAP version and image digest, and the summary in `results/validation/summary.json`. After `make up`, run `make load-validation` to see the matrix in the scan list and on the validation dashboard. Details and the table: [docs/RESULTS.md](docs/RESULTS.md).
 
 ## Scripts
 
@@ -42,6 +47,9 @@ Then open http://127.0.0.1 (the app). Dashboards are at http://127.0.0.1:3001.
 | `python scripts/export_scan.py SCAN_ID` | write a finished scan to a versioned JSON file |
 | `python scripts/import_scan.py FILE` | import an exported scan (scores are recomputed; nothing is scanned) |
 | `python scripts/sample_usage.py SCAN_ID` | record CPU and memory of ZAP and the backend during a scan |
+| `python scripts/validation_matrix.py --target ID --name NAME` | run each profile once for a target and save the files under `results/validation/` |
+| `python scripts/validation_summary.py [--store]` | summarise the matrix and (with `--store`) refresh the dashboard rows |
+| `python scripts/validation_exports.py` | write the matrix as importable exports |
 
 ## Where things are
 
