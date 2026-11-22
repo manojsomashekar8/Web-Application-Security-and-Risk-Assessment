@@ -15,7 +15,7 @@ It runs entirely on your own computer. Nothing is sent to outside services.
 ## Quick start
 
 ```
-./install.sh            # fresh Ubuntu 22.04 or 24.04: installs what is missing and starts everything
+./install.sh            # fresh Ubuntu 22.04 or 24.04: installs what is missing, starts everything, and fills the dashboards with the saved validation data
 make up                 # start the stack, if it is already installed
 make scan-dvwa          # the default demo scan of DVWA (about 8 minutes)
 ```

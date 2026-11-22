@@ -116,6 +116,8 @@ docker compose up -d --no-deps frontend
 
 ## Stopping and restarting
 
+`make down` stops and removes the containers and keeps the database volume. Starting again with `make up` brings the data back.
+
 | Goal | Command |
 |---|---|
 | Stop everything (keeps your data) | `make down` |

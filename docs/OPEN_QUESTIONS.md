@@ -129,3 +129,10 @@ What is still unresolved, and what is needed to settle each item.
 - Library-based CVE values: no library finding exists in these targets (plugin 10003 did not fire). Needs a target that loads an old library, and your approval to add it.
 - DVWA API scans: re-run after the fix if their numbers are to be used (needs approval).
 - Literature list: still written from memory; each source to be checked before it is cited.
+
+## Current open items (2026-11-22, final)
+
+- **Duplicate matrix scans on this machine.** Scans 28 to 33 are copies of the six matrix runs (17 to 27 are the originals). They were created when `make load-validation` ran on a database that already had the originals. They don't change any score. Default used: keep them until you decide. Needed: confirm deletion of scans 28 to 33 (the export files can restore them). The original matrix scans have no import record, so the duplicate check can't match them. A future fix would record the import hash on the originals.
+- **Freezes and lag.** Diagnosis: during scans ZAP's memory peaked at about 15 GB on a 23 GB machine, so the system paged heavily (about 4,000 to 4,800 pages per second, 15:40 to 16:00 local). The swap file and every Docker container sit on a spinning disk (`sdc`, a Toshiba HDD). ZAP can also use all 12 threads. The last hard reset was not logged, so its exact cause is unknown. Options not yet chosen: move swap to an SSD (no free space there, so it needs a partition change to Windows, which needs your approval), reduce ZAP's CPU use during scans, or add RAM. Default used: no change.
+- **Grafana time range.** Time-series panels default to the last 6 hours. Older scans show only after you widen the range.
+- **Fresh install.** `install.sh` now runs `make experiments` and `make load-validation`. The matrix scans and validation rows load; the earlier DVWA and Juice Shop test scans do not (never exported). A clean-machine run has not been tested.

@@ -124,7 +124,11 @@ Most users never need to touch these. Edit them, then run `make up` (or restart 
 | `configs/cve_map.json` | ZAP plugin id to CVE mapping, for CVSS, EPSS and KEV | empty (no CVEs yet) |
 | `docs/TARGETS.md` | Which sites may be scanned | DVWA, Juice Shop, WebGoat, bWAPP |
 
-## 9. Login modes
+## 9. Grafana time range
+
+The overview's time-series panels use the dashboard time range, which opens at the last 6 hours. Widen it (top right) to see older scans.
+
+## 9b. Login modes
 
 | Mode | Set `AUTH_MODE` to | What happens |
 |---|---|---|

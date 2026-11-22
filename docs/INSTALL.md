@@ -29,6 +29,7 @@ cd wasra
 4. Creates `.env` with random passwords, if it does not exist. An existing `.env` is never overwritten.
 5. Creates the Python environment used by the tests (`.venv`).
 6. Builds and starts the stack, and waits for the health endpoints.
+6b. Fills the dashboards: `make experiments` (from the saved raw runs), then `make load-validation` (the WebGoat and bWAPP matrix as scans, with the validation rows).
 7. Prints the addresses to open.
 
 Other forms:
