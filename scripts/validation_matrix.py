@@ -59,10 +59,10 @@ def run_one(target_id: int, name: str, profile: str) -> dict:
     settings = psql(f"select coalesce(settings::text,'null') from scans where id={scan_id}")
     (out / "settings.json").write_text(json.dumps(json.loads(settings), indent=1, sort_keys=True))
     meta = json.loads(psql(
-        f"select json_build_object('scan_id',id,'target',url,'profile',settings->>'profile','status',status,"
-        f"'error',error,'zap_version',zap_version,'started_at',started_at,'finished_at',finished_at,"
-        f"'wall_seconds',round(extract(epoch from finished_at-started_at)::numeric,1),'stage_seconds',stage_seconds,"
-        f"'url_counts_after_spider',stage_urls,'usage',usage,'aborted_at_90_min',{str(aborted).lower()},"
+        f"select json_build_object('scan_id',s.id,'target',t.url,'profile',s.settings->>'profile','status',s.status,"
+        f"'error',s.error,'zap_version',s.zap_version,'started_at',s.started_at,'finished_at',s.finished_at,"
+        f"'wall_seconds',round(extract(epoch from s.finished_at-s.started_at)::numeric,1),'stage_seconds',s.stage_seconds,"
+        f"'url_counts_after_spider',s.stage_urls,'usage',s.usage,'aborted_at_90_min',{str(aborted).lower()},"
         f"'zap_image','zaproxy/zap-stable:2.16.1@sha256:7840969c7c9fead565bf9734b12f49f6886db90b1d35b1f74d79710bbd081dab')"
         f" from scans s join targets t on t.id=s.target_id where s.id={scan_id}"))
     (out / "meta.json").write_text(json.dumps(meta, indent=1, sort_keys=True))
