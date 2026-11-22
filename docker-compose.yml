@@ -21,6 +21,7 @@ services:
       -config api.addrs.addr.regex=true
     ports: ["127.0.0.1:8090:8090"]
     shm_size: 512m
+    volumes: ["./results/zap-reports:/zap/reports"]  # ZAP writes its HTML scan reports here; the backend serves them
 
   juice-shop:
     image: bkimminich/juice-shop:v19.0.0@sha256:2765a26de7647609099a338d5b7f61085d95903c8703bb70f03fcc4b12f0818d

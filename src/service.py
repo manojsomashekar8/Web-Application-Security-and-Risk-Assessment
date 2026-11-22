@@ -134,8 +134,14 @@ def _run_scan(scan_id: int, target_id: int, settings: dict) -> None:
         ctx = {k: t[k] for k in CONTEXT_FIELDS}
         rows, overlap = scan_rows(raw, ctx)
         _store_findings(conn, scan_id, rows, ctx)
-        conn.execute("UPDATE scans SET status='done', finished_at=now(), top10_overlap=%s WHERE id=%s",
-                     (overlap, scan_id))
+        try:  # ZAP's report is a bonus: a failure here must not fail the scan
+            with _ZAP_LOCK:
+                report = zap.generate_report(f"scan-{scan_id}.html")
+        except Exception as exc:
+            report = None
+            print("ZAP report not generated:", exc, flush=True)
+        conn.execute("UPDATE scans SET status='done', finished_at=now(), top10_overlap=%s, zap_report=%s WHERE id=%s",
+                     (overlap, report, scan_id))
     except Exception as exc:  # record failure, never leave the scan 'running'
         conn.execute("UPDATE scans SET status='failed', finished_at=now(), error=%s WHERE id=%s",
                      (str(exc)[:1000], scan_id))

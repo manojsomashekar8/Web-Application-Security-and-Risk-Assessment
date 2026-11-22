@@ -103,6 +103,7 @@ export default function Findings() {
           <button className="button ghost" onClick={rescore} disabled={busy}>{busy ? "Re-scoring..." : "Re-score"}</button>
           <button className="button ghost" onClick={() => download(`/scans/${id}/report.html`, `scan-${id}.html`).catch((e) => setError(e.message))}>Full report (HTML)</button>
           <button className="button ghost" onClick={() => download(`/scans/${id}/report.json`, `scan-${id}.json`).catch((e) => setError(e.message))}>Full report (JSON)</button>
+          {scan.zap_report && <button className="button ghost" onClick={() => download(`/scans/${id}/zap-report.html`, `zap-scan-${id}.html`).catch((e) => setError(e.message))}>ZAP report (HTML)</button>}
           <button className="button ghost" onClick={() => download(`/scans/${id}/findings.csv`, `scan-${id}-findings.csv`).catch((e) => setError(e.message))}>Findings (CSV)</button>
         </div>
       </div>

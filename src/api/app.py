@@ -97,7 +97,7 @@ def scan_status(sid: int):
     if not s:
         raise HTTPException(404, "no such scan")
     return {"id": s["id"], "status": s["status"], "error": s["error"], "settings": s["settings"],
-            "stage_seconds": s["stage_seconds"], "top10_overlap": s["top10_overlap"]}
+            "stage_seconds": s["stage_seconds"], "top10_overlap": s["top10_overlap"], "zap_report": s["zap_report"]}
 
 
 @app.get("/api/scans/{sid}/findings", dependencies=[Depends(require_auth)])
@@ -170,6 +170,21 @@ def scan_usage(sid: int, body: dict):
     if n is None:
         raise HTTPException(404, "no such scan")
     return {"ok": True}
+
+
+@app.get("/api/scans/{sid}/zap-report.html", dependencies=[Depends(require_auth)])
+def scan_zap_report(sid: int):
+    with db.connect() as conn:
+        row = conn.execute("SELECT zap_report FROM scans WHERE id=%s", (sid,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "no such scan")
+    if not row["zap_report"]:
+        raise HTTPException(404, "no ZAP report was stored for this scan (scans before this change, or report failed)")
+    path = pathlib.Path("/app/results/zap-reports") / pathlib.Path(row["zap_report"]).name  # name only, no folders
+    if not path.is_file():
+        raise HTTPException(404, "ZAP report file is missing")
+    return Response(path.read_bytes(), media_type="text/html; charset=utf-8",
+                    headers={"Content-Disposition": f"attachment; filename=zap-scan-{sid}.html"})
 
 
 @app.get("/api/scans/{sid}/report.json", dependencies=[Depends(require_auth)])
