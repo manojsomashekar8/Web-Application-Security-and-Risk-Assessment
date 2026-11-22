@@ -1,0 +1,25 @@
+{
+ "aborted_at_90_min": false,
+ "error": null,
+ "finished_at": "2026-11-22T10:42:59.849594+00:00",
+ "profile": "deep",
+ "recovered_from_db": "files written after the machine froze; usage summary was never saved",
+ "scan_id": 22,
+ "stage_seconds": {
+  "active_scan": 1128.0,
+  "ajax_spider": 200.2,
+  "passive_wait": 0.0,
+  "spider": 5.0
+ },
+ "started_at": "2026-11-22T10:20:10.029687+00:00",
+ "status": "done",
+ "target": "http://bwapp:80",
+ "url_counts_after_spider": {
+  "ajax": 70,
+  "traditional": 68
+ },
+ "usage": null,
+ "wall_seconds": 1369.8,
+ "zap_image": "zaproxy/zap-stable:2.16.1@sha256:7840969c7c9fead565bf9734b12f49f6886db90b1d35b1f74d79710bbd081dab",
+ "zap_version": "2.16.1"
+}

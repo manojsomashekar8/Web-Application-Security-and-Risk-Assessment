@@ -1,0 +1,16 @@
+{
+ "active_scan": true,
+ "ajax_depth": 5,
+ "ajax_minutes": 10,
+ "ajax_spider": true,
+ "alert_threshold": "DEFAULT",
+ "attack_strength": "DEFAULT",
+ "delay_ms": 0,
+ "description": "The reference scan: traditional spider, AJAX spider, passive wait, active scan at ZAP's default strength and threshold, no limits.",
+ "max_rule_minutes": 0,
+ "max_scan_minutes": 0,
+ "profile": "deep",
+ "spider": "traditional",
+ "spider_minutes": 0,
+ "threads_per_host": 24
+}

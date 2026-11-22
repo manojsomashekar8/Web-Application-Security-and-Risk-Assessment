@@ -1,0 +1,36 @@
+{
+ "aborted_at_90_min": false,
+ "error": null,
+ "finished_at": "2026-11-22T10:02:28.212607+00:00",
+ "profile": "quick",
+ "scan_id": 17,
+ "stage_seconds": {
+  "passive_wait": 0.0,
+  "spider": 5.0
+ },
+ "started_at": "2026-11-22T10:02:19.291605+00:00",
+ "status": "done",
+ "target": "http://webgoat:8080/WebGoat/",
+ "url_counts_after_spider": {
+  "traditional": 1
+ },
+ "usage": {
+  "backend": {
+   "cpu_avg_pct": 27.0,
+   "cpu_peak_pct": 53.7,
+   "mem_avg_mib": 87,
+   "mem_peak_mib": 88,
+   "samples": 2
+  },
+  "zap": {
+   "cpu_avg_pct": 33.6,
+   "cpu_peak_pct": 45.1,
+   "mem_avg_mib": 3743,
+   "mem_peak_mib": 3867,
+   "samples": 2
+  }
+ },
+ "wall_seconds": 8.9,
+ "zap_image": "zaproxy/zap-stable:2.16.1@sha256:7840969c7c9fead565bf9734b12f49f6886db90b1d35b1f74d79710bbd081dab",
+ "zap_version": "2.16.1"
+}

@@ -97,3 +97,11 @@ What is still unresolved, and what is needed to settle each item.
   - `EXPLAIN.md` section 4 ("Why several spiders?"): the statement that the AJAX spider finds the JavaScript pages describes the intended design. The example "first run on Juice Shop found 95 pages but no API endpoints" is from an earlier run with an unrecorded AJAX state.
   - `EXPLAIN.md` section 6 and `docs/RESULTS.md` Juice Shop numbers (raw alerts, unique findings, top-10 overlap): these come from the raw files, not from the AJAX stage, so they stand; the claims about what the scanner reached do not.
 - **Needed:** decide whether to re-run the affected scans with the fixed browser (a large change, needs your approval). Default used: keep the numbers, mark them as produced with a failing AJAX stage, and do not re-run.
+
+## Machine freeze during the validation matrix (2026-11-22)
+
+- **What happened:** the machine froze and was force-stopped at about 18:50 local time. The journal of the previous boot shows normal service activity up to 18:50:32 and no shutdown stage, so it was a hard reset, not a clean shutdown. The logs do not show the cause. No out-of-memory kill of ZAP appears near the freeze. One earlier OOM kill (VS Code, at 15:59 local) happened under memory pressure during a ZAP run.
+- **What was lost:** nothing stored in the database. The bWAPP deep scan (scan 22) had already finished at 16:12 local time and its raw alerts (15) are in the database. Its result files were written afterwards from the database (`results/validation/bwapp/deep/`). Its usage summary (CPU and memory) was never saved, because the sampler did not post it.
+- **Why the runner did not finish:** the runner stopped after scan 22 without writing its files and without an error in its log. The sampler's summary is missing for that scan only; the sampler saved summaries for scans 16 to 21. The exact stall is not known.
+- **Current state:** the stack was restarted with `docker compose up -d` (no data removed). The backend startup check marks interrupted scans as failed; none were running.
+- **Needed:** confirm whether to re-run bWAPP deep to get its usage numbers, and whether to keep the machine's load lower during scans.
