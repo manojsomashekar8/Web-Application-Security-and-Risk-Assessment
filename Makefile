@@ -44,6 +44,7 @@ scan-validation:  ## raw ZAP scans of DVWA, WebGoat, bWAPP (inside the backend c
 
 load-validation:  ## load the saved validation matrix (WebGoat and bWAPP, all profiles) into a fresh database
 	for f in results/exports/validation/*.json; do $(PY) scripts/import_scan.py "$$f" || true; done
+	DATABASE_URL="$(DBURL)" $(PY) scripts/validation_summary.py --store
 
 experiments:  ## validation experiments 1-5 from saved raw alerts (offline)
 	DATABASE_URL="$(DBURL)" $(PY) -m src.experiments.run --store
@@ -59,6 +60,7 @@ reproduce:  ## full run from a clean state: env, stack, tests, scan, report, rep
 	$(MAKE) clean
 	$(MAKE) up
 	DATABASE_URL="$(DBURL)" $(PY) -m src.experiments.run --store
+	$(MAKE) load-validation
 	WASRA_INTEGRATION=1 WASRA_E2E=1 $(MAKE) test
 	$(MAKE) scan-dvwa
 	$(MAKE) report
