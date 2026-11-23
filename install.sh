@@ -22,13 +22,15 @@ MIN_FREE_GB=25
 say() { printf '%s\n' "$*"; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
-# 1. OS: only Ubuntu 22.04 and 24.04 are tested.
+# 1. OS: Ubuntu only. Releases other than the tested ones get a warning, not a refusal.
 [ -r /etc/os-release ] || die "cannot read /etc/os-release; unsupported system"
 . /etc/os-release
-if [ "${ID:-}" != "ubuntu" ] || { [ "${VERSION_ID:-}" != "22.04" ] && [ "${VERSION_ID:-}" != "24.04" ]; }; then
-  die "unsupported system: ${PRETTY_NAME:-unknown}. This script supports Ubuntu 22.04 and 24.04."
-fi
+[ "${ID:-}" = "ubuntu" ] || die "unsupported system: ${PRETTY_NAME:-unknown}. This script supports Ubuntu only."
 say "OS: ${PRETTY_NAME}"
+case "${VERSION_ID:-}" in
+  22.04|24.04) ;;
+  *) say "warning: ${PRETTY_NAME} is not a tested release (tested: 22.04, 24.04); continuing" ;;
+esac
 
 # 2. Resources
 ram_gb=$(awk '/MemTotal/ {printf "%d", $2/1024/1024}' /proc/meminfo)
